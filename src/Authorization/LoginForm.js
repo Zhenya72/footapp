@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+import axios from 'axios';
 
 
 function LoginForm({ OnUser }) {
@@ -9,34 +8,28 @@ function LoginForm({ OnUser }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  
-
-
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true); // Встановлюємо індикатор завантаження перед відправкою запиту
     setError(null); // Скидаємо попередню помилку
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      const user = auth.currentUser;
-      const userData = {
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName
-      };
-      OnUser(userData); // Встанови інформацію про користувача
-      setEmail('')
-      setPassword('')
-      setError(null);
-      // Якщо запит успішний, перенаправляємо користувача на головну сторінку
+      const userData = { email, password };
+      const response = await axios.post('http://127.0.0.1:5000/loginform', userData);
+      if (response.data.error) {
+        setError(response.data.error);
+      } else {
+        OnUser(email); 
+        setEmail('')
+        setPassword('')
+        setError(null);
+      }
     } catch (error) {
-      setError(error.message);
+      setError(error.response.data.message);
     } finally {
       setLoading(false);
     }
   };
-
 
 
   return (

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../firebase";
+import axios from 'axios';
 
 
 function SignupForm({ OnUser }) {
@@ -25,25 +24,21 @@ function SignupForm({ OnUser }) {
         setError('Паролі не співпадають');
         return
       }
-      await createUserWithEmailAndPassword(auth, email, password);
-      const user = auth.currentUser;
-      await updateProfile(user, {
-        displayName: `${firstName} ${lastName}`
-      });
-      const userData = {
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName
-      };
-      OnUser(userData); // Встанови інформацію про користувача
-      setFirstName('')
-      setLastName('')
-      setEmail('')
-      setPassword('')
-      setConfirmPassword('')
-      setError(null);
+      const userData = { firstName, lastName, email, password };
+      const response = await axios.post('http://127.0.0.1:5000/signupform', userData);
+      if (response.data.error) {
+        setError(response.data.error);
+      } else {
+        OnUser(email);
+        setFirstName('')
+        setLastName('')
+        setEmail('')
+        setPassword('')
+        setConfirmPassword('')
+        setError(null);
+      }
     } catch (error) {
-      setError(error);
+      setError(error.response.data.message);
     } finally {
       setLoading(false);
     }

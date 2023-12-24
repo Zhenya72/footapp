@@ -6,9 +6,8 @@ function MainPage(props) {
   return (
     <div>Привіт, {props.user.email}
       
-      {props.user.firstName}
+      {props.user.displayName}
       
-      {props.user.lastName}
       
       !
 
