@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import axios from 'axios';
+import Loader from '../Components/Loader';
+import { Form, Button, FloatingLabel, Alert } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './form.css';
 
 
 function LoginForm({ OnUser }) {
@@ -14,9 +18,17 @@ function LoginForm({ OnUser }) {
     setLoading(true); // Встановлюємо індикатор завантаження перед відправкою запиту
     setError(null); // Скидаємо попередню помилку
     try {
+      if (!email) {
+        setError('Будь ласка, введіть адресу електронної пошти');
+        return
+      }
+      if (!password) {
+        setError('Будь ласка, введіть пароль');
+        return;
+      }
       const userData = { email, password };
       const response = await axios.post('http://127.0.0.1:5000/loginform', userData);
-      if (response.data.error) {
+      if (response && response.data && response.data.error) {
         setError(response.data.error);
       } else {
         OnUser(email); 
@@ -25,7 +37,7 @@ function LoginForm({ OnUser }) {
         setError(null);
       }
     } catch (error) {
-      setError(error.response.data.message);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -33,44 +45,44 @@ function LoginForm({ OnUser }) {
 
 
   return (
-    <div>
-      <form>
-      <h2>Log In</h2>
-        <div>
-          <label htmlFor="email">Email Address</label>
-          <input 
+    <div className='d-flex justify-content-center align-items-center'>
+      <Form className="form">
+      <h2 className="text-center mb-3">Log In</h2>
+        <FloatingLabel
+        controlId="email"
+        label="Email Address"
+        className="mb-2"
+      >
+          <Form.Control 
+            className="control"
             type="email" 
-            id="email" 
             value={email} 
             onChange={(e) => setEmail(e.target.value)} 
             placeholder='Email Address'
           />
-        </div>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input 
+        </FloatingLabel>
+        <FloatingLabel
+        controlId="password"
+        label="Password"
+        className="mb-2"
+      >
+          <Form.Control 
+            className="control"
             type="password" 
             id="password" 
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
             placeholder='Password'
           />
-        </div>
-        <button type="button" onClick={handleLogin}>Log In</button>
-      </form>
-      {loading && <div>Завантаження...'</div>}
-      {error && <div>Помилка: {error}</div>}
+        </FloatingLabel>
+        
+        { error && <Alert variant="danger">{error}</Alert> }
+
+        <Button className="button" variant="primary" type="button" onClick={handleLogin}>Log In</Button>
+      </Form>
+      {loading && <Loader/>}
     </div>
   );
 }
 
 export default LoginForm;
-
-
-
-
-
-
-
-
-

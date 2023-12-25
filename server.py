@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +28,7 @@ class Users(db.Model):
 
 @app.route('/signupform', methods=['POST'])
 def signupform():
+    # time.sleep(2)  # Затримка на 2 секунди
     data = request.get_json() 
     existing_user = Users.query.filter_by(email=data['email']).first()
     if existing_user:
@@ -43,6 +45,7 @@ def signupform():
 
 @app.route('/loginform', methods=['POST'])
 def loginform():
+    # time.sleep(2)  # Затримка на 2 секунди
     data = request.get_json()
     email = data['email']
     password = data['password']
