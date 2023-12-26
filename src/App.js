@@ -13,13 +13,11 @@ function App() {
     }
   }, []);
 
-
   const handleDataFromGrandchild = (data) => {
     // Обробка даних, отриманих від внукового компонента
     setOnUser(data)
     localStorage.setItem('user', JSON.stringify(data));
   };
-  
   
   return (
     <div className='App'>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import Loader from '../Components/Loader';
 import { Form, Button, FloatingLabel, Alert } from 'react-bootstrap';
+import { EyeFill, EyeSlashFill } from 'react-bootstrap-icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './form.css';
 
@@ -13,6 +14,8 @@ function SignupForm({ OnUser }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfimPassword, setShowConfimPassword] = useState(false);
 
   const validateEmail = (email) => {
     // Регулярний вираз для перевірки валідності email
@@ -57,7 +60,12 @@ function SignupForm({ OnUser }) {
       if (response && response.data && response.data.error) {
         setError(response.data.error);
       } else {
-        OnUser(email);
+        const user = {
+          firstName: firstName,
+          lastName: lastName,
+          email: email
+        }
+        OnUser(user);
         setFirstName('')
         setLastName('')
         setEmail('')
@@ -72,6 +80,14 @@ function SignupForm({ OnUser }) {
     }
   };
 
+  const toggleShowPassword = () => {
+    setShowPassword((prev) => !prev); // Зміна стану для відображення/приховування пароля
+  };
+  
+  const toggleShowConfimPassword = () => {
+    setShowConfimPassword((prev) => !prev); // Зміна стану для відображення/приховування пароля
+  };
+
   return (
     <div className='d-flex justify-content-center align-items-center'>
       <Form className="form" onSubmit={handleRegistration}>
@@ -80,7 +96,7 @@ function SignupForm({ OnUser }) {
         <FloatingLabel
         controlId="firstName"
         label="First Name"
-        className="mb-2"
+        className="mb-2 label"
         >
           <Form.Control 
             className="control"
@@ -95,7 +111,7 @@ function SignupForm({ OnUser }) {
       <FloatingLabel
         controlId="lastName"
         label="Last Name"
-        className="mb-2"
+        className="mb-2 label"
       >
         <Form.Control 
             className="control"
@@ -110,7 +126,7 @@ function SignupForm({ OnUser }) {
       <FloatingLabel
         controlId="email"
         label="Email Address"
-        className="mb-2"
+        className="mb-2 label"
       >
         <Form.Control 
             className="control"
@@ -124,29 +140,35 @@ function SignupForm({ OnUser }) {
       <FloatingLabel
         controlId="password"
         label="Password"
-        className="mb-2"
+        className="mb-2 label"
       >
         <Form.Control 
             className="control"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder='Password'
-        />
+          />
+          <span className="password-toggle" onClick={toggleShowPassword}> {/* Обробник кліку, який змінює стан показу пароля */}
+              {showPassword ? <EyeFill /> : <EyeSlashFill />} {/* Відображення відповідної іконки */}
+          </span>
         </FloatingLabel>
         
       <FloatingLabel
         controlId="confirmPassword"
         label="Confirm Password"
-        className="mb-2"
+        className="mb-2 label"
       >
         <Form.Control 
             className="control"
-            type="password"
+            type={showConfimPassword ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder='Confirm Password'
-        />
+          />
+          <span className="password-toggle" onClick={toggleShowConfimPassword}> {/* Обробник кліку, який змінює стан показу пароля */}
+              {showConfimPassword ? <EyeFill /> : <EyeSlashFill />} {/* Відображення відповідної іконки */}
+          </span>
         </FloatingLabel>
 
 

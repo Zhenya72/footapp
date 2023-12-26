@@ -5,8 +5,8 @@ function Loader() {
 
     return (
         <>
-            <div class="overlay"></div>
-            <div><span class="loader"></span></div>
+            <div className="overlay"></div>
+            <div><span className="loader"></span></div>
         </>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import Loader from '../Components/Loader';
 import { Form, Button, FloatingLabel, Alert } from 'react-bootstrap';
+import { EyeFill, EyeSlashFill } from 'react-bootstrap-icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './form.css';
 
@@ -11,6 +12,7 @@ function LoginForm({ OnUser }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
 
   const handleLogin = async (e) => {
@@ -31,7 +33,9 @@ function LoginForm({ OnUser }) {
       if (response && response.data && response.data.error) {
         setError(response.data.error);
       } else {
-        OnUser(email); 
+        const { firstName, lastName, email } = response.data;
+        const user = { firstName, lastName, email };
+        OnUser(user); 
         setEmail('')
         setPassword('')
         setError(null);
@@ -43,15 +47,18 @@ function LoginForm({ OnUser }) {
     }
   };
 
+  const toggleShowPassword = () => {
+    setShowPassword((prev) => !prev); // Зміна стану для відображення/приховування пароля
+  };
 
   return (
     <div className='d-flex justify-content-center align-items-center'>
       <Form className="form">
       <h2 className="text-center mb-3">Log In</h2>
         <FloatingLabel
-        controlId="email"
-        label="Email Address"
-        className="mb-2"
+          controlId="email"
+          label="Email Address"
+          className="mb-2 label"
       >
           <Form.Control 
             className="control"
@@ -62,18 +69,20 @@ function LoginForm({ OnUser }) {
           />
         </FloatingLabel>
         <FloatingLabel
-        controlId="password"
-        label="Password"
-        className="mb-2"
-      >
+          controlId="password"
+          label="Password"
+          className="mb-2 label"
+        >
           <Form.Control 
             className="control"
-            type="password" 
-            id="password" 
+            type={showPassword ? "text" : "password"}
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
             placeholder='Password'
           />
+          <span className="password-toggle" onClick={toggleShowPassword}> {/* Обробник кліку, який змінює стан показу пароля */}
+              {showPassword ? <EyeFill /> : <EyeSlashFill />} {/* Відображення відповідної іконки */}
+          </span>
         </FloatingLabel>
         
         { error && <Alert variant="danger">{error}</Alert> }
@@ -86,3 +95,9 @@ function LoginForm({ OnUser }) {
 }
 
 export default LoginForm;
+
+
+
+
+
+
