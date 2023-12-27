@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
-import Authorization from './Authorization/Authorization';
-import MainPage from './pages/MainPage'; 
+import Routes from './Routes';
 
 function App() {
   const [onUser, setOnUser] = useState(null);
@@ -21,19 +19,8 @@ function App() {
   
   return (
     <div className='App'>
-      <Router>
-        <Switch>
-          <Route exact path='/'>
-            {!onUser ? <Redirect to='/authorization' /> : <Redirect to="/main" />}
-          </Route>
-          <Route exact path='/authorization'>
-            <Authorization OnUser={handleDataFromGrandchild} />
-          </Route>
-          <Route path='/main'>
-           <MainPage user={onUser} />
-          </Route>
-        </Switch>
-      </Router>
+      <Routes onUser={onUser} handleDataFromGrandchild={ handleDataFromGrandchild } />
+
     </div>
   );
 }

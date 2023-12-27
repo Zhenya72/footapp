@@ -37,10 +37,13 @@ class UserTournaments(db.Model):
 # with app.app_context():
 #     db.session.query(Users).delete()  # Видалення всіх записів з таблиці користувачів 
 #     db.session.commit()  # Збереження змін
+#     db.session.query(Tournaments).delete()  # Видалення всіх записів з таблиці користувачів 
+#     db.session.commit()  # Збереження змін
+#     db.session.query(UserTournaments).delete()  # Видалення всіх записів з таблиці користувачів 
+#     db.session.commit()  # Збереження змін
 
 @app.route('/signupform', methods=['POST'])
 def signupform():
-    # time.sleep(2)  # Затримка на 2 секунди
     data = request.get_json() 
     existing_user = Users.query.filter_by(email=data['email']).first()
     if existing_user:
@@ -55,7 +58,6 @@ def signupform():
 
 @app.route('/loginform', methods=['POST'])
 def loginform():
-    # time.sleep(2)  # Затримка на 2 секунди
     data = request.get_json()
     email = data['email']
     password = data['password']
@@ -76,8 +78,8 @@ def user_tournaments():
     if user is None:
         return jsonify({'error': 'Користувача з таким email не знайдено'})
     else:
-        user_tournaments = UserTournaments.query.filter_by(user_id=user.user_id).join(Tournaments).add_columns(Tournaments.tournament_name, Tournaments.implementation_date).all()
-        tournaments_data = [{'tournamentName': row.tournament_name, 'implementationDate': row.implementation_date.strftime("%Y-%m-%d %H:%M:%S")} for row in user_tournaments]
+        user_tournaments = UserTournaments.query.filter_by(user_id=user.user_id).join(Tournaments).add_columns(Tournaments.tournament_id, Tournaments.tournament_name, Tournaments.implementation_date).all()
+        tournaments_data = [{'id':row.tournament_id, 'tournamentName': row.tournament_name, 'implementationDate': row.implementation_date.strftime("%Y-%m-%d %H:%M:%S")} for row in user_tournaments]
         return jsonify({'userTournaments': tournaments_data})
 
 @app.route('/add-tournament', methods=['POST'])
@@ -102,10 +104,27 @@ def delete_tournament(tournament_id):
     tournament_to_delete = Tournaments.query.get(tournament_id)
     if tournament_to_delete:
         db.session.delete(tournament_to_delete)
+        user_tournaments_to_delete = UserTournaments.query.filter_by(tournament_id=tournament_id).all()
+        for user_tournament in user_tournaments_to_delete:
+            db.session.delete(user_tournament)
         db.session.commit()
         return jsonify({'message': 'Tournament successfully deleted'})
     else:
         return jsonify({'error': 'Tournament not found'})
-    
+
+
+@app.route('/tournamentsEdit/<int:tournament_id>', methods=['PUT'])
+def edit_tournament(tournament_id):
+    data = request.get_json()
+    tournament_to_edit = Tournaments.query.get(tournament_id)  # Знаходимо турнір за його ID
+    if tournament_to_edit:
+        tournament_to_edit.tournament_name = data['tournamentName']  # Змінюємо назву турніру
+        db.session.commit()  # Зберігаємо зміни в базі даних
+        return jsonify({'message': 'Tournament name successfully updated'})
+    else:
+        return jsonify({'error': 'Tournament not found'})
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
