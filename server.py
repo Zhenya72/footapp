@@ -3,12 +3,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import time
+import os
 from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///footapp.db'  
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOADED_PHOTOS_DEST'] = 'uploads'
+app.config['UPLOADED_DOCUMENTS_DEST'] = 'documents' 
 db = SQLAlchemy(app)
 
 class Users(db.Model):
@@ -26,6 +29,22 @@ class Tournaments(db.Model):
 class UserTournaments(db.Model):
     participation_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    tournament_id = db.Column(db.Integer, db.ForeignKey('tournaments.tournament_id'), nullable=False)
+
+class Teams(db.Model):
+    team_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+    year_of_foundation = db.Column(db.Integer, nullable=False)
+    coach = db.Column(db.String(100), nullable=False)
+    games = db.Column(db.Integer, default=0, nullable=False)
+    victories = db.Column(db.Integer, default=0, nullable=False)
+    nobodys = db.Column(db.Integer, default=0, nullable=False)
+    defeats = db.Column(db.Integer, default=0, nullable=False)
+    goals_scored = db.Column(db.Integer, default=0, nullable=False)
+    missed_balls = db.Column(db.Integer, default=0, nullable=False)
+    goal_difference = db.Column(db.Integer, default=0, nullable=False)
+    points = db.Column(db.Integer, default=0, nullable=False)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournaments.tournament_id'), nullable=False)
 
    
@@ -125,6 +144,68 @@ def edit_tournament(tournament_id):
         return jsonify({'error': 'Tournament not found'})
 
 
+@app.route('/add-teams', methods=['POST'])
+def add_team_to_tournament():
+    data = request.get_json()
+    tournamentId = data['tournamentId']
+    team_name = data['name']
+    country = data['country']
+    yearOfFoundation = data['yearOfFoundation']
+    coach = data['coach']
+    games = data['games']
+    victories = data['victories']
+    nobodys = data['nobodys']
+    defeats = data['defeats']
+    goalsScored = data['goalsScored']
+    missedBalls = data['missedBalls']
+    goalDifference = data['goalDifference']
+    points = data['points']
+    tournament = Tournaments.query.filter_by(tournament_id=tournamentId).first()
+    if tournament is None:
+        return jsonify({'error': 'Турніру з даним ID не існує'})
+    new_team = Teams(name=team_name, country=country, year_of_foundation=yearOfFoundation, coach=coach, games=games, victories=victories, nobodys=nobodys, defeats=defeats, goals_scored=goalsScored, missed_balls=missedBalls, goal_difference=goalDifference, points=points, tournament_id=tournamentId)
+    db.session.add(new_team)
+    db.session.commit()
+    return jsonify({'message': 'Команда успішно додана до турніру'})
 
+
+@app.route('/teams', methods=['POST'])
+def fetch_teams():
+    data = request.get_json()
+    tournamentId = data['tournamentId']
+    teams = Teams.query.filter_by(tournament_id=tournamentId).all()
+    if teams:
+        serialized_teams = [
+            {
+                'team_id': team.team_id,
+                'name': team.name,
+                'country': team.country,
+                'yearOfFoundation': team.year_of_foundation,
+                'coach': team.coach
+            }
+            for team in teams
+        ]
+        return jsonify({'teams': serialized_teams})
+    else:
+        return jsonify({'error': 'Команди для цього турніру не знайдено'})
+
+@app.route('/teamsDelete/<int:team_id>', methods=['DELETE'])
+def delete_team(team_id):
+    team_to_delete = Teams.query.get(team_id)
+    if team_to_delete:
+        db.session.delete(team_to_delete)
+        db.session.commit()
+        return jsonify({'message': 'Команда успішно видалена'})
+    else:
+        return jsonify({'error': 'Команду не знайдено'})
+
+    
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+
+
+

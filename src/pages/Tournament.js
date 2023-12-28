@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { Button, Tab, Tabs } from 'react-bootstrap';
 import { HouseFill } from 'react-bootstrap-icons';
 import './Tournament.css';
@@ -12,6 +12,8 @@ import Players from './Players';
 
 const Tournament = () => {
   const history = useHistory();
+  const { tournamentName } = useParams();
+  const { tournamentId } = useParams();
   const [key, setKey] = useState('standings');
 
     const handleLogout = () => {
@@ -21,6 +23,7 @@ const Tournament = () => {
 
   return (
     <div className='tournament'>
+      <h2 className='title'>{tournamentName}</h2>
       <Button className='house_btn' onClick={handleLogout}><HouseFill className='house_btn__icons' /></Button>
 
       <Tabs
@@ -31,19 +34,19 @@ const Tournament = () => {
         fill
       >
         <Tab eventKey="standings" title="Standings">
-          <Standings/>
+          <Standings tournamentId={ tournamentId } />
         </Tab>
         <Tab eventKey="statistics" title="Statistics">
-          <Statistics/>
+          <Statistics tournamentId={ tournamentId } />
         </Tab>
         <Tab eventKey="matches" title="Matches">
-          <Matches/>
+          <Matches tournamentId={ tournamentId } />
         </Tab>
         <Tab eventKey="teams" title="Teams">
-          <Teams />
+          <Teams tournamentId={ tournamentId } />
         </Tab>
         <Tab eventKey="players" title="Players">
-          <Players/>
+          <Players tournamentId={ tournamentId } />
         </Tab>
       </Tabs>
     </div>

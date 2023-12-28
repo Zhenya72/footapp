@@ -15,7 +15,7 @@ function Routes({onUser, handleDataFromGrandchild}) {
           <Route path='/main'>
            <MainPage user={onUser} />
           </Route>
-          <Route path='/tournament/:tournamentName'>
+          <Route path='/tournament/:tournamentName/:tournamentId'>
            <Tournament />
           </Route>
         </Switch>

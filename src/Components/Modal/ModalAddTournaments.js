@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Loader from '../Loader';
+import { PlusCircle } from 'react-bootstrap-icons';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../pages/MainPage.css'
@@ -35,9 +36,9 @@ const ModalAddTournaments = ({ email, fetchUserTournaments }) => {
     
     
   return (
-    <div className='chempionats'>
+    <div>
       {loading && <Loader/>}
-          <Button onClick={handleModalAddShow} className="me-2 chempionats_add_button">Додати чемпіонат</Button>
+          <Button onClick={handleModalAddShow} className="me-2 add_button"><PlusCircle className="add_button__icons"/></Button>
         {/* Модальне вікно для додавання турніру */}
         <div>
           <Modal show={modalAddShow} onHide={handleModalAddClose}>

@@ -46,7 +46,7 @@ const ModalDeleteAndEditTournaments = ({ tournaments, fetchUserTournaments }) =>
   // Функція для відкриття модального вікна редагування турніру
   const handleEditTournament = (e, id, currentTournamentName) => {
     e.preventDefault();
-    setTournamentIdToDelete(id); // Зберегти ID турніру для подальшого видалення
+    setTournamentIdToDelete(id); // Зберегти ID турніру 
     setEditTournamentName(currentTournamentName); // Встановити поточну назву турніру для редагування
     setShowEditModal(true); // Відкрити модальне вікно
   };
@@ -72,8 +72,8 @@ const ModalDeleteAndEditTournaments = ({ tournaments, fetchUserTournaments }) =>
   };
 
 
-  const handleTournamentClick = (tournamentName) => {
-    history.push(`/tournament/${tournamentName}`); // перехід на окрему сторінку з використанням ідентифікатора турніру
+  const handleTournamentClick = (tournamentName, tournamentId) => {
+    history.push(`/tournament/${tournamentName}/${tournamentId}`); // перехід на окрему сторінку з використанням ідентифікатора турніру
   };
 
 
@@ -84,7 +84,7 @@ const ModalDeleteAndEditTournaments = ({ tournaments, fetchUserTournaments }) =>
         tournaments.sort((a, b) => new Date(b.implementationDate) - new Date(a.implementationDate))
           .map((tournament, index) => (
           <div key={index} className="tournament-card p-2" >
-            <div className="tournament-card__click" onClick={() => handleTournamentClick(tournament.tournamentName)}> 
+            <div className="tournament-card__click" onClick={() => handleTournamentClick(tournament.tournamentName, tournament.id)}> 
 
             <h5 className='title'>{tournament.tournamentName}</h5>
             <p>{new Date(tournament.implementationDate).toLocaleDateString()}</p>
