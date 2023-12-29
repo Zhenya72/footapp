@@ -14,6 +14,14 @@ const Teams = ({ tournamentId }) => {
   const [loading, setLoading] = useState(false);
   const [modalDeleteShow, setModalDeleteShow] = useState(false);
   const [teamId, setTeamId] = useState(null);
+  const [name, setName] = useState('');  
+  const [country, setCountry] = useState('');  
+  const [yearOfFoundation, setyearOfFoundation] = useState('');  
+  const [coach, setCoach] = useState('');  
+  
+  const [modalEditShow, setModalEdiShow] = useState(false);
+
+
 
 
 
@@ -39,6 +47,20 @@ const Teams = ({ tournamentId }) => {
   };
 
 
+
+  const handleEditShowModalt = (id, name, country, yearOfFoundation, coach) => {
+    setTeamId(id); // Зберегти ID турніру 
+    setName(name); 
+    setCountry(country); 
+    setyearOfFoundation(yearOfFoundation); 
+    setCoach(coach); 
+    setModalEdiShow(true); // Відкрити модальне вікно
+  };
+
+  const handleElitCloseModal = () => {
+    setModalEdiShow(false);
+  };
+
   useEffect(() => {
     fetchTeams();
   }, []);
@@ -49,34 +71,39 @@ const Teams = ({ tournamentId }) => {
     <div className='teams'>
       {loading && <Loader/>}
       <ModalAddTeams tournamentId={tournamentId} fetchTeams={fetchTeams} />
-    
-      <Table striped bordered hover>
-        <thead style={{ textAlign: 'center' }}>
-          <tr>
-            <th>Name</th>
-            <th>Country</th>
-            <th>Year of Foundation</th>
-            <th>Coach</th>
-            <th>Edit</th>
-            <th>Delete</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teams.sort((a, b) => a.name.localeCompare(b.name))
-            .map(team => (
-            <tr key={team.team_id}>
-              <td>{team.name}</td>
-              <td>{team.country}</td>
-              <td>{team.yearOfFoundation}</td>
-              <td>{team.coach}</td>
-              <td><Button className='options-btn' onClick={(e) => handleEditShowModalt(team.team_id)}><Pencil /></Button></td>
-              <td><Button className='options-btn' onClick={(e) => handleShowModal(team.team_id)}><TrashFill /></Button></td>
+
+      {teams && teams.length > 0 ? (   
+        <Table striped bordered hover>
+          <thead style={{ textAlign: 'center' }}>
+            <tr>
+              <th>Name</th>
+              <th>Country</th>
+              <th>Year of Foundation</th>
+              <th>Coach</th>
+              <th>Edit</th>
+              <th>Delete</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {teams.sort((a, b) => a.name.localeCompare(b.name))
+              .map(team => (
+              <tr key={team.team_id}>
+                <td>{team.name}</td>
+                <td>{team.country}</td>
+                <td>{team.yearOfFoundation}</td>
+                <td>{team.coach}</td>
+                <td><Button className='options-btn' onClick={() => handleEditShowModalt(team.team_id, team.name, team.country, team.yearOfFoundation, team.coach)}><Pencil /></Button></td>
+                <td><Button className='options-btn' onClick={() => handleShowModal(team.team_id)}><TrashFill /></Button></td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+        ) : (
+        <p className='noteams'>There are no commands</p>
+      )}
 
         <ModalDeleteTeams modalDeleteShow={modalDeleteShow} teamId={teamId} handleCloseModal={handleCloseModal} fetchTeams={ fetchTeams } />
+        <ModalEditTeams modalEditShow={modalEditShow} teamId={teamId} name={name} country={country} yearOfFoundation={yearOfFoundation} coach={coach} handleElitCloseModal={handleElitCloseModal} fetchTeams={ fetchTeams } />
     </div>
 
   );

@@ -199,13 +199,21 @@ def delete_team(team_id):
     else:
         return jsonify({'error': 'Команду не знайдено'})
 
+
+@app.route('/edit-teams/<int:team_id>', methods=['PATCH'])
+def edit_teams(team_id):
+    data = request.get_json()
+    team_to_edit = Teams.query.get(team_id)  # Знаходимо команду за його ID
+    if team_to_edit:
+        team_to_edit.name = data['name']  # Змінюємо назву команди
+        team_to_edit.country = data['country'] 
+        team_to_edit.year_of_foundation = data['yearOfFoundation']  
+        team_to_edit.coach = data['coach']  
+        db.session.commit()  # Зберігаємо зміни в базі даних
+        return jsonify({'message': 'Команду оновлено'})
+    else:
+        return jsonify({'error': 'Team not found'})
     
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
-
-
 

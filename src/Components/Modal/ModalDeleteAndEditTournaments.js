@@ -118,11 +118,14 @@ const ModalDeleteAndEditTournaments = ({ tournaments, fetchUserTournaments }) =>
           <Modal.Title>Редагування назви турніру</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <Form.Group className='mb-3'>
           <Form.Control
-            type="text"
-            value={editTournamentName}
-            onChange={(e) => setEditTournamentName(e.target.value)}
+              type="text"
+              placeholder='Введіть назву турніру'
+              value={editTournamentName}
+              onChange={(e) => setEditTournamentName(e.target.value)}
           />
+          </Form.Group>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleEditCloseModal}>Скасувати</Button>

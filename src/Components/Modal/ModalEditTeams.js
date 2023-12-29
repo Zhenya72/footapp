@@ -1,44 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Loader from '../Loader';
-import { PlusCircle } from 'react-bootstrap-icons';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../pages/Teams.css'
 
-const ModalEditTeams = ({ tournamentId, fetchTeams }) => {
-  const [modalAddShow, setModalAddShow] = useState(false);
-  const [name, setName] = useState('');  
-  const [country, setCountry] = useState('');  
-  const [yearOfFoundation, setyearOfFoundation] = useState('');  
-  const [coach, setCoach] = useState('');  
+const ModalEditTeams = ({ modalEditShow, teamId, name, country, yearOfFoundation, coach, handleElitCloseModal, fetchTeams }) => {
+  const [editName, setEditName] = useState('');  
+  const [editCountry, setEditCountry] = useState('');  
+  const [editYearOfFoundation, setEditYearOfFoundation] = useState('');  
+  const [editCoach, setEditCoach] = useState('');  
   const [loading, setLoading] = useState(false);
-  
-  const handleModalAddClose = () => {
-    setModalAddShow(false);
-    setName('');
-    setCountry('');
-    setyearOfFoundation('');
-    setCoach('');
-  } 
-  const handleModalAddShow = () => {
-    setModalAddShow(true);
-    setName('');
-    setCountry('');
-    setyearOfFoundation('');
-    setCoach('');
-  } 
+
+  useEffect(() => {
+    if (name) {
+      setEditName(name);
+    }
+    if (country) {
+      setEditCountry(country);
+    }
+    if (yearOfFoundation) {
+      setEditYearOfFoundation(yearOfFoundation);
+    }
+    if (coach) {
+      setEditCoach(coach);
+    }
+  }, [name, country, yearOfFoundation, coach]);
 
 
-  const addTeams = async (e) => {
+  const editTeams = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post(`http://127.0.0.1:5000/add-teams`, {'tournamentId': tournamentId, 'name': name, 'country': country, 'yearOfFoundation': yearOfFoundation, 'coach': coach, 'games': 0, 'victories': 0, 'nobodys': 0, 'defeats': 0, 'goalsScored': 0, 'missedBalls': 0, 'goalDifference': 0, 'points': 0});
+      await axios.patch(`http://127.0.0.1:5000/edit-teams/${teamId}`, {'name': editName, 'country': editCountry, 'yearOfFoundation': editYearOfFoundation, 'coach': editCoach});
       fetchTeams();
-      handleModalAddClose();
+      handleElitCloseModal();
     } catch (error) {
-      console.error('Помилка додавання команди:', error);
+      console.error('Помилка редагування команди:', error);
     } finally {
       setLoading(false);
     }
@@ -48,40 +46,52 @@ const ModalEditTeams = ({ tournamentId, fetchTeams }) => {
   return (
     <div>
       {loading && <Loader />}
-      <Modal show={showEditModal} onHide={handleEditCloseModal}>
+      <Modal show={modalEditShow} onHide={handleElitCloseModal}>
         <Modal.Header closeButton>
           <Modal.Title>Редагування команди</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <Form.Group className='mb-3'>
           <Form.Control
-            type='text'
-            value={name}
-            onChange={(e) => setEditName(e.target.value)}
-          />
+              type='text'
+              placeholder='Введіть назву команди'
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+            />
+            </Form.Group>
+          <Form.Group className='mb-3'>
           <Form.Control
-            type='text'
-            value={country}
-            onChange={(e) => setEditCountry(e.target.value)}
-          />
+              type='text'
+              placeholder='Введіть країну команди'
+              value={editCountry}
+              onChange={(e) => setEditCountry(e.target.value)}
+            />
+            </Form.Group>
+          <Form.Group className='mb-3'>
           <Form.Control
-            type='number'
-            value={yearOfFoundation}
-            onChange={(e) => {
-              const inputYear = e.target.value;
-              if (inputYear.length <= 4) {
-                setEdityearOfFoundation(inputYear);
-              }
-            }}
-          />
+              type='number'
+              placeholder='Введіть рік заснування команди'
+              value={editYearOfFoundation}
+              onChange={(e) => {
+                const inputYear = e.target.value;
+                if (inputYear.length <= 4) {
+                  setEditYearOfFoundation(inputYear);
+                }
+              }}
+            />
+            </Form.Group>
+          <Form.Group className='mb-3'>
           <Form.Control
-            type='text'
-            value={coach}
-            onChange={(e) => setEditCoach(e.target.value)}
-          />
+              type='text'
+              placeholder='Введіть тренера команди'
+              value={editCoach}
+              onChange={(e) => setEditCoach(e.target.value)}
+            />
+            </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleEditCloseModal}>Скасувати</Button>
-          <Button variant="primary" onClick={handleSaveChanges}>Підтвердити редагування</Button>
+          <Button variant="secondary" onClick={handleElitCloseModal}>Скасувати</Button>
+          <Button variant="primary" onClick={editTeams}>Підтвердити редагування</Button>
         </Modal.Footer>
       </Modal>
       </div>

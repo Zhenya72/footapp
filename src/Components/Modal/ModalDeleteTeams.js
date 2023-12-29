@@ -7,10 +7,7 @@ import '../../pages/Teams.css'
 
 const ModalDeleteTeams = ({ modalDeleteShow, teamId, handleCloseModal, fetchTeams }) => {
   const [loading, setLoading] = useState(false);
-
-  console.log(teamId);
-
-
+  
   const deleteTeams = async (e) => {
     e.preventDefault();
     setLoading(true);
