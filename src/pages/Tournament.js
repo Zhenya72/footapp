@@ -11,15 +11,24 @@ import Players from './Players';
 
 
 const Tournament = () => {
+  const [teams, setTeams] = useState([]);  // Стейт для збереження команд
+  const [players, setPlayers] = useState([]);  // Стейт для збереження команд
   const history = useHistory();
   const { tournamentName } = useParams();
   const { tournamentId } = useParams();
   const [key, setKey] = useState('standings');
 
-    const handleLogout = () => {
+  const handleLogout = () => {
     // Перенаправлення користувача на головну сторінку
     history.push('/main');
-  };
+    };
+  
+  const AllTeams = (teams) => {
+    setTeams(teams)
+  }
+  const AllPlayers = (players) => {
+    setPlayers(players)
+  }
 
   return (
     <div className='tournament'>
@@ -34,19 +43,19 @@ const Tournament = () => {
         fill
       >
         <Tab eventKey="standings" title="Standings">
-          <Standings tournamentId={ tournamentId } />
+          <Standings />
         </Tab>
         <Tab eventKey="statistics" title="Statistics">
-          <Statistics tournamentId={ tournamentId } />
+          <Statistics />
         </Tab>
         <Tab eventKey="matches" title="Matches">
-          <Matches tournamentId={ tournamentId } />
+          <Matches tournamentId={ tournamentId } teams={teams} players={players} />
         </Tab>
         <Tab eventKey="teams" title="Teams">
-          <Teams tournamentId={ tournamentId } />
+          <Teams tournamentId={ tournamentId } AllTeams={AllTeams} />
         </Tab>
         <Tab eventKey="players" title="Players">
-          <Players tournamentId={ tournamentId } />
+          <Players tournamentId={ tournamentId } teams={teams} AllPlayers={AllPlayers} />
         </Tab>
       </Tabs>
     </div>

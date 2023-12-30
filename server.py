@@ -4,10 +4,12 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import time
 import os
-from datetime import datetime
+from datetime import datetime, time
+
 
 app = Flask(__name__)
 CORS(app)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///footapp.db'  
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOADED_PHOTOS_DEST'] = 'uploads'
@@ -47,6 +49,42 @@ class Teams(db.Model):
     points = db.Column(db.Integer, default=0, nullable=False)
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournaments.tournament_id'), nullable=False)
 
+class Players(db.Model):
+    player_id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
+    position = db.Column(db.String(100), nullable=False)
+    birthday = db.Column(db.Date, nullable=False)
+    height = db.Column(db.Numeric(precision=5, scale=2), default=0, nullable=False)  # Зміна типу на числодроби
+    weight = db.Column(db.Numeric(precision=5, scale=2), default=0, nullable=False)  # Зміна типу на числодроби
+    game_number = db.Column(db.Integer, default=0, nullable=False)
+
+class Matches(db.Model):
+    match_id = db.Column(db.Integer, primary_key=True)
+    match_date = db.Column(db.Date, nullable=False)
+    match_time = db.Column(db.Time, nullable=False)
+    stadium = db.Column(db.String(100), nullable=False)
+    home_team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
+    away_team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
+    home_team_goals = db.Column(db.Integer, default=0, nullable=False)
+    away_team_goals = db.Column(db.Integer, default=0, nullable=False)
+
+class Goals(db.Model):
+    goal_id = db.Column(db.Integer, primary_key=True)
+    match_id = db.Column(db.Integer, db.ForeignKey('matches.match_id'), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('players.player_id'), nullable=False)
+    time_of_goal = db.Column(db.Time, nullable=False)
+
+class Assistants(db.Model):
+    assistant_id = db.Column(db.Integer, primary_key=True)
+    match_id = db.Column(db.Integer, db.ForeignKey('matches.match_id'), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('players.player_id'), nullable=False)
+    time_of_assist = db.Column(db.Time, nullable=False)
+  
+
    
 # Створення таблиць бази даних
 # with app.app_context():
@@ -54,12 +92,13 @@ class Teams(db.Model):
     
 # Очищення бази даних
 # with app.app_context():
-#     db.session.query(Users).delete()  # Видалення всіх записів з таблиці користувачів 
+#     db.session.query(Users).delete()  # Видалення всіх записів з таблиці користувачів
+#     db.session.query(Tournaments).delete()  # Видалення всіх записів з таблиці турнірів 
+#     db.session.query(UserTournaments).delete()  # Видалення всіх записів з таблиці користувачів-турнірів 
+#     db.session.query(Teams).delete()  # Видалення всіх записів з таблиці команд 
+#     db.session.query(Players).delete()  # Видалення всіх записів з таблиці гравців 
 #     db.session.commit()  # Збереження змін
-#     db.session.query(Tournaments).delete()  # Видалення всіх записів з таблиці користувачів 
-#     db.session.commit()  # Збереження змін
-#     db.session.query(UserTournaments).delete()  # Видалення всіх записів з таблиці користувачів 
-#     db.session.commit()  # Збереження змін
+
 
 @app.route('/signupform', methods=['POST'])
 def signupform():
@@ -213,7 +252,105 @@ def edit_teams(team_id):
         return jsonify({'message': 'Команду оновлено'})
     else:
         return jsonify({'error': 'Team not found'})
+
+
+@app.route('/add-player', methods=['POST'])
+def add_player():
+    data = request.get_json()
+    new_player = Players(
+        first_name=data['firstName'],
+        last_name=data['lastName'],
+        team_id=data['teamId'],
+        position=data['position'],
+        birthday=datetime.strptime(data['birthday'], '%Y-%m-%d').date(),
+        height=data['height'],
+        weight=data['weight'],
+        game_number=data['gameNumber']
+    )
+    team = Teams.query.filter_by(team_id=data['teamId']).first()
+    if team is None:
+        return jsonify({'error': 'Команди з даним ID не існує'})
+    db.session.add(new_player)
+    db.session.commit()
+    return jsonify({'message': 'Гравець успішно доданий в базу даних'})
+
+
+@app.route('/players', methods=['POST'])
+def fetch_players():
+    data = request.get_json()
+    tournamentId = data['tournamentId']
+    # Вибрати всі команди для вказаного турніру
+    teams = Teams.query.filter_by(tournament_id=tournamentId).all()
+    # Зібрати ідентифікатори команд у список
+    team_ids = [team.team_id for team in teams]
+    # Вибрати всіх гравців, які є у вибраних командах
+    players = Players.query.filter(Players.team_id.in_(team_ids)).all()
+    if players:
+        serialized_players = [
+            {
+                'player_id': player.player_id,
+                'first_name': player.first_name,
+                'last_name': player.last_name,
+                'team_id': player.team_id,
+                'position': player.position,
+                'birthday': player.birthday.strftime('%Y-%m-%d'),  # При потребі форматування дати
+                'height': player.height,  # Перетворення на float
+                'weight': player.weight,  # Перетворення на float
+                'game_number': player.game_number,
+            }
+            for player in players
+        ]
+        return jsonify({'players': serialized_players})
+    else:
+        return jsonify({'error': 'Гравців для цього турніру не знайдено'})
+
+@app.route('/playersDelete/<int:player_id>', methods=['DELETE'])
+def delete_player(player_id):
+    player_to_delete = Players.query.get(player_id)
+    if player_to_delete:
+        db.session.delete(player_to_delete)
+        db.session.commit()
+        return jsonify({'message': 'Команда успішно видалена'})
+    else:
+        return jsonify({'error': 'Команду не знайдено'})
     
+
+@app.route('/edit-players/<int:player_id>', methods=['PATCH'])
+def edit_players(player_id):
+    data = request.get_json()
+    player_to_edit = Players.query.get(player_id)  # Знаходимо гравця за його ID
+    if player_to_edit:
+        player_to_edit.first_name = data['firstName']  # Змінюємо гравця
+        player_to_edit.last_name = data['lastName'] 
+        player_to_edit.team_id = data['teamId']  
+        player_to_edit.position = data['position']  
+        player_to_edit.birthday = datetime.strptime(data['birthday'], '%Y-%m-%d').date()  
+        player_to_edit.height = data['height']  
+        player_to_edit.weight = data['weight']  
+        player_to_edit.game_number = data['gameNumber']  
+        db.session.commit()  # Зберігаємо зміни в базі даних
+        return jsonify({'message': 'Гравця оновлено'})
+    else:
+        return jsonify({'error': 'Гравця не знайдено'})
+    
+
+@app.route('/add-match', methods=['POST'])
+def add_match():
+    data = request.get_json()
+    new_match = Matches(
+        match_date=datetime.strptime(data['matchDate'], '%Y-%m-%d').date(),
+        match_time=datetime.strptime(data['matchTime'], '%H:%M').time(),
+        stadium=data['stadium'],
+        home_team_id=data['homeTeamId'],
+        away_team_id=data['awayTeamId'],
+        home_team_goals=data['homeTeamGoals'],
+        away_team_goals=data['awayTeamGoals']
+    )
+    db.session.add(new_match)
+    db.session.commit()
+    return jsonify({'message': 'Матч успішно доданий в базу даних'})
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
-

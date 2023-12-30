@@ -7,9 +7,9 @@ import { TrashFill, Pencil } from 'react-bootstrap-icons';
 import ModalAddTeams from '../Components/Modal/ModalAddTeams';
 import ModalDeleteTeams from '../Components/Modal/ModalDeleteTeams'
 import ModalEditTeams from '../Components/Modal/ModalEditTeams'
-import './Teams.css'
+import './Pages.css'
 
-const Teams = ({ tournamentId }) => {
+const Teams = ({ tournamentId, AllTeams }) => {
   const [teams, setTeams] = useState([]);  // Стейт для збереження команд
   const [loading, setLoading] = useState(false);
   const [modalDeleteShow, setModalDeleteShow] = useState(false);
@@ -18,11 +18,7 @@ const Teams = ({ tournamentId }) => {
   const [country, setCountry] = useState('');  
   const [yearOfFoundation, setyearOfFoundation] = useState('');  
   const [coach, setCoach] = useState('');  
-  
   const [modalEditShow, setModalEdiShow] = useState(false);
-
-
-
 
 
   const fetchTeams = async () => {
@@ -30,6 +26,7 @@ const Teams = ({ tournamentId }) => {
     try {
       const response = await axios.post('http://127.0.0.1:5000/teams', { tournamentId: tournamentId });
       setTeams(response.data.teams);
+      AllTeams(response.data.teams);
     } catch (error) {
       console.error('Помилка отримання турніру:', error);
     } finally {
@@ -68,7 +65,7 @@ const Teams = ({ tournamentId }) => {
 
 
   return (
-    <div className='teams'>
+    <div className='cont'>
       {loading && <Loader/>}
       <ModalAddTeams tournamentId={tournamentId} fetchTeams={fetchTeams} />
 
@@ -99,7 +96,7 @@ const Teams = ({ tournamentId }) => {
           </tbody>
         </Table>
         ) : (
-        <p className='noteams'>There are no commands</p>
+        <p className='not'>There are no commands</p>
       )}
 
         <ModalDeleteTeams modalDeleteShow={modalDeleteShow} teamId={teamId} handleCloseModal={handleCloseModal} fetchTeams={ fetchTeams } />

@@ -4,7 +4,7 @@ import Loader from '../Loader';
 import { PlusCircle } from 'react-bootstrap-icons';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '../../pages/Teams.css'
+import '../../pages/Pages.css'
 
 const ModalAddTeams = ({ tournamentId, fetchTeams }) => {
   const [modalAddShow, setModalAddShow] = useState(false);

@@ -3,7 +3,7 @@ import axios from 'axios';
 import Loader from '../Loader';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '../../pages/Teams.css'
+import '../../pages/Pages.css'
 
 const ModalEditTeams = ({ modalEditShow, teamId, name, country, yearOfFoundation, coach, handleElitCloseModal, fetchTeams }) => {
   const [editName, setEditName] = useState('');  
