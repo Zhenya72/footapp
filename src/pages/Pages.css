@@ -33,3 +33,48 @@
   transform: translate(-50%, -50%);
   font-size: 24px;
 }
+
+.nottop{
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -25%);
+  font-size: 24px;
+}
+.notbottom{
+  position: absolute;
+  bottom: 25%;
+  left: 50%;
+  transform: translate(-50%, -25%);
+  font-size: 24px;
+}
+
+.top_group_input{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.top_input{
+  flex: 1;
+}
+
+.top_ture{
+  margin: 0 10px;
+}
+
+.bottom_group_input{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.bottom_group_input_left{
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom_group_input_right{
+  display: flex;
+  flex-direction: column;
+}

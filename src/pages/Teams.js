@@ -9,7 +9,7 @@ import ModalDeleteTeams from '../Components/Modal/ModalDeleteTeams'
 import ModalEditTeams from '../Components/Modal/ModalEditTeams'
 import './Pages.css'
 
-const Teams = ({ tournamentId, AllTeams }) => {
+const Teams = ({ tournamentId, AllTeams, standings }) => {
   const [teams, setTeams] = useState([]);  // Стейт для збереження команд
   const [loading, setLoading] = useState(false);
   const [modalDeleteShow, setModalDeleteShow] = useState(false);
@@ -27,6 +27,7 @@ const Teams = ({ tournamentId, AllTeams }) => {
       const response = await axios.post('http://127.0.0.1:5000/teams', { tournamentId: tournamentId });
       setTeams(response.data.teams);
       AllTeams(response.data.teams);
+      standings();
     } catch (error) {
       console.error('Помилка отримання турніру:', error);
     } finally {

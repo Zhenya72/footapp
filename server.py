@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import time
 import os
 from datetime import datetime, time
+import uuid
 
 
 app = Flask(__name__)
@@ -75,14 +76,14 @@ class Goals(db.Model):
     match_id = db.Column(db.Integer, db.ForeignKey('matches.match_id'), nullable=False)
     team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
     player_id = db.Column(db.Integer, db.ForeignKey('players.player_id'), nullable=False)
-    time_of_goal = db.Column(db.Time, nullable=False)
+    time_of_goal = db.Column(db.Integer, default=0, nullable=False)
 
 class Assistants(db.Model):
     assistant_id = db.Column(db.Integer, primary_key=True)
     match_id = db.Column(db.Integer, db.ForeignKey('matches.match_id'), nullable=False)
     team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
     player_id = db.Column(db.Integer, db.ForeignKey('players.player_id'), nullable=False)
-    time_of_assist = db.Column(db.Time, nullable=False)
+    time_of_assist = db.Column(db.Integer, default=0, nullable=False)
   
 
    
@@ -92,12 +93,12 @@ class Assistants(db.Model):
     
 # Очищення бази даних
 # with app.app_context():
-#     db.session.query(Users).delete()  # Видалення всіх записів з таблиці користувачів
-#     db.session.query(Tournaments).delete()  # Видалення всіх записів з таблиці турнірів 
-#     db.session.query(UserTournaments).delete()  # Видалення всіх записів з таблиці користувачів-турнірів 
-#     db.session.query(Teams).delete()  # Видалення всіх записів з таблиці команд 
-#     db.session.query(Players).delete()  # Видалення всіх записів з таблиці гравців 
-#     db.session.commit()  # Збереження змін
+    # db.session.query(Users).delete()  # Видалення всіх записів з таблиці користувачів
+    # db.session.query(Tournaments).delete()  # Видалення всіх записів з таблиці турнірів 
+    # db.session.query(UserTournaments).delete()  # Видалення всіх записів з таблиці користувачів-турнірів 
+    # db.session.query(Teams).delete()  # Видалення всіх записів з таблиці команд 
+    # db.session.query(Matches).delete()  # Видалення всіх записів з таблиці гравців 
+    # db.session.commit()  # Збереження змін
 
 
 @app.route('/signupform', methods=['POST'])
@@ -336,21 +337,213 @@ def edit_players(player_id):
 
 @app.route('/add-match', methods=['POST'])
 def add_match():
+    try:
+        data = request.json
+        match_date = data['matchDate']
+        match_time = data['matchTime']
+        stadium = data['stadium']
+        home_team_id = data['homeTeamId']
+        away_team_id = data['awayTeamId']
+        home_team_goals = data['homeTeamGoals']
+        away_team_goals = data['awayTeamGoals']
+        data_goals_home = data['dataGoalsHome']
+        data_goals_away = data['dataGoalsAway']
+
+        # Save the match details to the Matches table
+        new_match = Matches(
+            match_date=datetime.strptime(match_date, '%Y-%m-%d').date(),
+            match_time=datetime.strptime(match_time, '%H:%M').time(),
+            stadium=stadium,
+            home_team_id=home_team_id,
+            away_team_id=away_team_id,
+            home_team_goals=home_team_goals,
+            away_team_goals=away_team_goals
+        )
+        db.session.add(new_match)
+        db.session.commit()
+
+        # Save the goals to the Goals table
+        for goal_data in data_goals_home:
+            new_goal = Goals(
+                match_id=new_match.match_id,
+                team_id=home_team_id,
+                player_id=goal_data['playerId'],
+                time_of_goal=goal_data['minute']
+            )
+            db.session.add(new_goal)
+
+        for goal_data in data_goals_away:
+            new_goal = Goals(
+                match_id=new_match.match_id,
+                team_id=away_team_id,
+                player_id=goal_data['playerId'],
+                time_of_goal=goal_data['minute']
+            )
+            db.session.add(new_goal)
+
+        # Save the asist to the Assistants table
+        for asist_data in data_goals_home:
+            if asist_data['assistant'] and asist_data['assistant'] != 'pen':
+                new_asist = Assistants(
+                    match_id=new_match.match_id,
+                    team_id=home_team_id,
+                    player_id=asist_data['assistant'],
+                    time_of_assist=asist_data['minute']
+                )
+                db.session.add(new_asist)
+
+        for asist_data in data_goals_away:
+            if asist_data['assistant'] and asist_data['assistant'] != 'pen':
+                new_asist = Assistants(
+                    match_id=new_match.match_id,
+                    team_id=away_team_id,
+                    player_id=asist_data['assistant'],
+                    time_of_assist=asist_data['minute']
+                )
+                db.session.add(new_asist)
+
+        # Update Teams table for home and away teams
+        home_team = Teams.query.get(home_team_id)
+        away_team = Teams.query.get(away_team_id)
+
+        # Update games played for both teams
+        home_team.games += 1
+        away_team.games += 1
+
+        # Update goals scored and missed balls for both teams
+        home_team.goals_scored += home_team_goals
+        home_team.missed_balls += away_team_goals
+        away_team.goals_scored += away_team_goals
+        away_team.missed_balls += home_team_goals
+
+
+        # Update goal difference for both teams
+        home_team.goal_difference = home_team.goals_scored - home_team.missed_balls
+        away_team.goal_difference = away_team.goals_scored - away_team.missed_balls
+
+        # Update points, victories, defeats, and nobodys for both teams based on match result
+        if home_team_goals > away_team_goals:
+            home_team.points += 3
+            home_team.victories += 1
+            away_team.defeats += 1
+        elif away_team_goals > home_team_goals:
+            away_team.points += 3
+            away_team.victories += 1
+            home_team.defeats += 1
+        else:
+            home_team.points += 1
+            away_team.points += 1
+            home_team.nobodys += 1
+            away_team.nobodys += 1
+
+        db.session.commit()
+
+        return jsonify({'message': 'Match added successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/matches', methods=['POST'])
+def fetch_matches():
     data = request.get_json()
-    new_match = Matches(
-        match_date=datetime.strptime(data['matchDate'], '%Y-%m-%d').date(),
-        match_time=datetime.strptime(data['matchTime'], '%H:%M').time(),
-        stadium=data['stadium'],
-        home_team_id=data['homeTeamId'],
-        away_team_id=data['awayTeamId'],
-        home_team_goals=data['homeTeamGoals'],
-        away_team_goals=data['awayTeamGoals']
-    )
-    db.session.add(new_match)
-    db.session.commit()
-    return jsonify({'message': 'Матч успішно доданий в базу даних'})
+    tournamentId = data['tournamentId']
+    # Вибрати всі команди для вказаного турніру
+    teams = Teams.query.filter_by(tournament_id=tournamentId).all()
+    team_ids = [team.team_id for team in teams]
+    matches = Matches.query.filter((Matches.home_team_id.in_(team_ids)) | (Matches.away_team_id.in_(team_ids))).all()
+    goals_data = Goals.query.filter(Goals.match_id.in_([match.match_id for match in matches])).all()    
+    assistants_data = Assistants.query.filter(Assistants.match_id.in_([match.match_id for match in matches])).all()
+    
+    if matches:
+        serialized_matches = [
+            {
+                'match_id': match.match_id,
+                'match_date': match.match_date.strftime('%Y-%m-%d'),  
+                'match_time': match.match_time.strftime("%H:%M:%S"),
+                'stadium': match.stadium,
+                'home_team_id': match.home_team_id,
+                'away_team_id': match.away_team_id,
+                'home_team_goals': match.home_team_goals, 
+                'away_team_goals': match.away_team_goals,  
+                'goals': [{'goal_id':goal.goal_id, 'team_id': goal.team_id, 'player_id': goal.player_id, 'time_of_goal': goal.time_of_goal} for goal in goals_data if goal.match_id == match.match_id],
+                'assistants': [{'assistant_id': assistant.assistant_id, 'team_id': assistant.team_id, 'player_id': assistant.player_id, 'time_of_assist': assistant.time_of_assist} for assistant in assistants_data if assistant.match_id == match.match_id]
+            }
+            for match in matches
+        ]
+        return jsonify({'matches': serialized_matches})
+    else:
+        return jsonify({'error': 'Матчів для цього турніру не знайдено'})
+    
 
 
+@app.route('/standings', methods=['POST'])
+def standings():
+    data = request.get_json()
+    tournamentId = data['tournamentId']
+    teams = Teams.query.filter_by(tournament_id=tournamentId).all()
+    if teams:
+        serialized_teams = [
+            {
+                'team_id': team.team_id,
+                'name': team.name,
+                'games': team.games,
+                'victories': team.victories,
+                'nobodys': team.nobodys,
+                'defeats': team.defeats,
+                'goals_scored': team.goals_scored,
+                'missed_balls': team.missed_balls,
+                'goal_difference': team.goal_difference,
+                'points': team.points,
+            }
+            for team in teams
+        ]
+        return jsonify({'standings': serialized_teams})
+    else:
+        return jsonify({'error': 'Команди для цього турніру не знайдено'})
+
+
+@app.route('/statisticsGoals', methods=['POST'])
+def statisticsGoals():
+    data = request.get_json()
+    tournamentId = data['tournamentId']
+    teams = Teams.query.filter_by(tournament_id=tournamentId).all()
+    team_ids = [team.team_id for team in teams]
+    matches = Matches.query.filter((Matches.home_team_id.in_(team_ids)) | (Matches.away_team_id.in_(team_ids))).all()
+    goals_data = Goals.query.filter(Goals.match_id.in_([match.match_id for match in matches])).all()    
+    if goals_data:
+        serialized_teams = [
+            {
+                'goal_id': goal.goal_id,
+                'team_id': goal.team_id,
+                'player_id': goal.player_id,
+            }
+            for goal in goals_data
+        ]
+        return jsonify({'goals_data': serialized_teams})
+    else:
+        return jsonify({'error': 'Голів для цього турніру не знайдено'})
+
+@app.route('/statisticsAsists', methods=['POST'])
+def statisticsAsists():
+    data = request.get_json()
+    tournamentId = data['tournamentId']
+    teams = Teams.query.filter_by(tournament_id=tournamentId).all()
+    team_ids = [team.team_id for team in teams]
+    matches = Matches.query.filter((Matches.home_team_id.in_(team_ids)) | (Matches.away_team_id.in_(team_ids))).all()
+    assistants_data = Assistants.query.filter(Assistants.match_id.in_([match.match_id for match in matches])).all()
+    if assistants_data:
+        serialized_teams = [
+            {
+                'assistant_id': asist.assistant_id,
+                'team_id': asist.team_id,
+                'player_id': asist.player_id,
+            }
+            for asist in assistants_data
+        ]
+        return jsonify({'assistants_data': serialized_teams})
+    else:
+        return jsonify({'error': 'Асистів для цього турніру не знайдено'})
+    
 
 if __name__ == '__main__':
     app.run(debug=True)
+
