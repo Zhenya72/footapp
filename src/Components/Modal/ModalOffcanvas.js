@@ -37,7 +37,7 @@ function ModalOffcanvas({ user }) {
                 </div>
               }
             </div>
-            <Button onClick={handleLogout}>Вихід</Button>
+            <Button onClick={handleLogout}>Exit</Button>
           </Offcanvas.Body>
         </Offcanvas>
     </div>     

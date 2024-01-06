@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Loader from '../Loader';
+import ErrorModal from '../ErrorModal';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../pages/Pages.css'
@@ -11,6 +12,7 @@ const ModalEditTeams = ({ modalEditShow, teamId, name, country, yearOfFoundation
   const [editYearOfFoundation, setEditYearOfFoundation] = useState('');  
   const [editCoach, setEditCoach] = useState('');  
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (name) {
@@ -36,25 +38,30 @@ const ModalEditTeams = ({ modalEditShow, teamId, name, country, yearOfFoundation
       fetchTeams();
       handleElitCloseModal();
     } catch (error) {
-      console.error('Помилка редагування команди:', error);
+      setError('Error editing a command:', error);
+      console.error('Error editing a command:', error);
     } finally {
       setLoading(false);
     }
   };
     
+  const closeErrorModal = () => {
+    setError(null);
+  };
     
   return (
     <div>
       {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
       <Modal show={modalEditShow} onHide={handleElitCloseModal}>
         <Modal.Header closeButton>
-          <Modal.Title>Редагування команди</Modal.Title>
+          <Modal.Title>Edit a command</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form.Group className='mb-3'>
           <Form.Control
               type='text'
-              placeholder='Введіть назву команди'
+              placeholder='Enter the name of the command'
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
             />
@@ -62,7 +69,7 @@ const ModalEditTeams = ({ modalEditShow, teamId, name, country, yearOfFoundation
           <Form.Group className='mb-3'>
           <Form.Control
               type='text'
-              placeholder='Введіть країну команди'
+              placeholder='Enter the country of the team'
               value={editCountry}
               onChange={(e) => setEditCountry(e.target.value)}
             />
@@ -70,7 +77,7 @@ const ModalEditTeams = ({ modalEditShow, teamId, name, country, yearOfFoundation
           <Form.Group className='mb-3'>
           <Form.Control
               type='number'
-              placeholder='Введіть рік заснування команди'
+              placeholder='Enter the year the team was founded'
               value={editYearOfFoundation}
               onChange={(e) => {
                 const inputYear = e.target.value;
@@ -83,15 +90,15 @@ const ModalEditTeams = ({ modalEditShow, teamId, name, country, yearOfFoundation
           <Form.Group className='mb-3'>
           <Form.Control
               type='text'
-              placeholder='Введіть тренера команди'
+              placeholder='Enter the team coach'
               value={editCoach}
               onChange={(e) => setEditCoach(e.target.value)}
             />
             </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleElitCloseModal}>Скасувати</Button>
-          <Button variant="primary" onClick={editTeams}>Підтвердити редагування</Button>
+          <Button variant="secondary" onClick={handleElitCloseModal}>Cancel</Button>
+          <Button variant="primary" onClick={editTeams}>Confirm the edit</Button>
         </Modal.Footer>
       </Modal>
       </div>

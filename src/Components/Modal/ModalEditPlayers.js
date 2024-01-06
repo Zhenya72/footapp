@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Loader from '../Loader';
+import ErrorModal from '../ErrorModal';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../pages/Pages.css'
@@ -16,6 +17,7 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
   const [editWeight, setEditWeight] = useState('');  
   const [editGameNumber, setEditGameNumber] = useState(''); 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (firstName) {
@@ -53,26 +55,31 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
       fetchPlayers();
       handleElitCloseModal();
     } catch (error) {
-      console.error('Помилка редагування гравця:', error);
+      setError('Player editing error:', error);
+      console.error('Player editing error:', error);
     } finally {
       setLoading(false);
     }
   };
     
+  const closeErrorModal = () => {
+    setError(null);
+  };
     
   return (
     <div>
       {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
       {teams && teams.length > 0 ? (
       <Modal show={modalEditShow} onHide={handleElitCloseModal}>
         <Modal.Header closeButton>
-          <Modal.Title>Редагування гравця</Modal.Title>
+          <Modal.Title>Editing a player</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form.Group className='mb-3'>
                 <Form.Control
                   type='text'
-                  placeholder='Введіть імя гравця'
+                  placeholder="Enter the player's name"
                   value={editFirstName}
                   onChange={(e) => setEditFirstName(e.target.value)}
                 />
@@ -80,7 +87,7 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
             <Form.Group className='mb-3'>
                 <Form.Control
                   type='text'
-                  placeholder='Введіть прізвище гравця'
+                  placeholder="Enter the player's last name"
                   value={editLastName}
                   onChange={(e) => setEditLastName(e.target.value)}
                 />
@@ -89,7 +96,7 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
               <Form.Select
                 value={editTeamId}
                 onChange={(e) => setEditTeamId(e.target.value)}>
-                <option>Виберіть команду</option>
+                <option>Select a team</option>
                 {teams.sort((a, b) => a.name.localeCompare(b.name))
                   .map(team => (
                   <option key={team.team_id} value={team.team_id}>{team.name}</option>
@@ -100,7 +107,7 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
               <Form.Select
                 value={editPosition}
                 onChange={(e) => setEditPosition(e.target.value)} aria-label="Default select example">
-                  <option>Виберіть позицію</option>
+                  <option>Select a position</option>
                   <option value="GK">GK – goalkeeper</option>
                   <option value="CB">CB – centre back</option>
                   <option value="LB">LB – left back</option>
@@ -121,7 +128,7 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
               <Form.Group className='mb-3'>
               <Form.Control
                   type='date'
-                  placeholder='Введіть дату народження гравця'
+                  placeholder="Enter the player's date of birth"
                   value={editBirthday}
                   onChange={(e) => setEditBirthday(e.target.value)}
                 />
@@ -129,7 +136,7 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
               <Form.Group className='mb-3'>
               <Form.Control
                   type='number'
-                  placeholder='Введіть зріст гравця'
+                  placeholder="Enter the player's height"
                   value={editHeight}
                   onChange={(e) => setEditHeight(e.target.value)}
                 />
@@ -137,7 +144,7 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
               <Form.Group className='mb-3'>
               <Form.Control
                   type='number'
-                  placeholder='Введіть вагу гравця'
+                  placeholder="Enter the player's weight"
                   value={editWeight}
                   onChange={(e) => setEditWeight(e.target.value)}
                 />
@@ -145,15 +152,15 @@ const ModalEditPlayers = ({ modalEditShow, playerId, firstName, lastName, teamId
               <Form.Group className='mb-3'>
               <Form.Control
                   type='number'
-                  placeholder='Введіть ігровий номер гравця'
+                  placeholder="Enter the player's game number"
                   value={editGameNumber}
                   onChange={(e) => setEditGameNumber(e.target.value)}
                 />
               </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleElitCloseModal}>Скасувати</Button>
-          <Button variant="primary" onClick={editPlayers}>Підтвердити редагування</Button>
+          <Button variant="secondary" onClick={handleElitCloseModal}>Cancel</Button>
+          <Button variant="primary" onClick={editPlayers}>Confirm the edit</Button>
         </Modal.Footer>
         </Modal>
         ): (

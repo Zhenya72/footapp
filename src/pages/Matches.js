@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Loader from '../Components/Loader';
+import ErrorModal from '../Components/ErrorModal';
 import { Table, Button, Accordion } from 'react-bootstrap';
 import { TrashFill, Pencil } from 'react-bootstrap-icons';
 import ModalAddMatch from '../Components/Modal/ModalAddMatch';
-// import ModalDeleteMatch from '../Components/Modal/ModalDeletePlayers'
-// import ModalEditMatch from '../Components/Modal/ModalEditPlayers'
 import './Pages.css'
 
-const Matches = ({ tournamentId, teams, players, AllMatches, StatisticsGoals, StatisticsAsists }) => {
+const Matches = ({ tournamentId, teams, players, AllMatches, StatisticsGoals, StatisticsAsists, standings }) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [matches, setMatches] = useState([]);  // Стейт для збереження матчів
 
   const fetchMatches = async () => {
@@ -20,8 +20,10 @@ const Matches = ({ tournamentId, teams, players, AllMatches, StatisticsGoals, St
       AllMatches(response.data.matches);
       StatisticsGoals();
       StatisticsAsists();
+      standings();
     } catch (error) {
-      console.error('Помилка отримання матчу:', error);
+      setError('Match receipt error:', error);
+      console.error('Match receipt error:', error);
     } finally {
       setLoading(false);
     }
@@ -31,10 +33,14 @@ const Matches = ({ tournamentId, teams, players, AllMatches, StatisticsGoals, St
     fetchMatches();
   }, []);
 
+  const closeErrorModal = () => {
+    setError(null);
+  };
 
   return (
     <div className='cont'>
       {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
       
 
       {teams && teams.length > 0 && players && players.length > 0  ? (
@@ -47,9 +53,7 @@ const Matches = ({ tournamentId, teams, players, AllMatches, StatisticsGoals, St
                   .map(match => {
                     const foundTeamHome = teams.find(team => team.team_id === match.home_team_id);
                     const foundTeamAway = teams.find(team => team.team_id === match.away_team_id);
-                    // const goals = goals.filter(goal => goal.match_id === match.match_id);
-                    // const assists = assists.filter(assist => assist.match_id === match.match_id);
-
+                    
                     return (
                       <React.Fragment key={match.match_id}>
                         <tr>
@@ -65,26 +69,59 @@ const Matches = ({ tournamentId, teams, players, AllMatches, StatisticsGoals, St
                           <td>{match.away_team_goals}</td>
                           <td colSpan={2}>{foundTeamAway ? foundTeamAway.name : 'Team Not Found'}</td>
                         </tr>
-                        {/* {goals.map(goal => (
-                          <tr key={goal.goal_id}>
-                            <td>{goal.time_of_goal}</td>
-                            <td>{goal.player_id}</td>
-                            <td>{
-                              assists.find(assist => assist.goal_id === goal.goal_id && assist.team_id === goal.team_id)
-                                ? assists.find(assist => assist.goal_id === goal.goal_id && assist.team_id === goal.team_id).player_id
-                                : ''
-                              }</td>
+                        {match.goals && match.goals.length > 0 && (
+                          <tr>
+                            <td colSpan={3}>
+                              {match.goals.map((goal, index) => {
+                                const goalPlayer = players.find(player => player.player_id === parseInt(goal.player_id));
+                                const assistant = match.assistants.find(assist => assist.time_of_assist === goal.time_of_goal);
+
+                                if (goalPlayer && goalPlayer.team_id === match.home_team_id) {
+                                  return (
+                                    <p key={index}>
+                                      {` ${goal.time_of_goal}' ${goalPlayer.last_name || 'Unknown Player'}`}
+                                      {assistant && (
+                                        <>
+                                          {' '}
+                                          ({assistant.player_id && players.find(player => player.player_id === parseInt(assistant.player_id)).team_id === match.home_team_id
+                                            ? players.find(player => player.player_id === parseInt(assistant.player_id)).last_name || 'Unknown Assistant'
+                                            : 'Unknown Assistant'})
+                                        </>
+                                      )}
+                                      <br />
+                                    </p>
+                                  );
+                                }
+                                return null; // If the player is not found or does not belong to the home team
+                              })}
+                            </td>
                             <td></td>
-                            <td>{goal.time_of_goal}</td>
-                            <td>{goal.player_id}</td>
-                            <td>{
-                              assists.find(assist => assist.goal_id === goal.goal_id && assist.team_id === goal.team_id)
-                                ? assists.find(assist => assist.goal_id === goal.goal_id && assist.team_id === goal.team_id).player_id
-                                : ''
-                              }</td>
+                            <td colSpan={3}>
+                              {match.goals.map((goal, index) => {
+                                const goalPlayer = players.find(player => player.player_id === parseInt(goal.player_id));
+                                const assistant = match.assistants.find(assist => assist.time_of_assist === goal.time_of_goal);
+
+                                if (goalPlayer && goalPlayer.team_id === match.away_team_id) {
+                                  return (
+                                    <p key={index}>
+                                      {` ${goal.time_of_goal}' ${goalPlayer.last_name || 'Unknown Player'}`}
+                                      {assistant && (
+                                        <>
+                                          {' '}
+                                          ({assistant.player_id && players.find(player => player.player_id === parseInt(assistant.player_id)).team_id === match.away_team_id
+                                            ? players.find(player => player.player_id === parseInt(assistant.player_id)).last_name || 'Unknown Assistant'
+                                            : 'Unknown Assistant'})
+                                        </>
+                                      )}
+                                      <br />
+                                    </p>
+                                  );
+                                }
+                                return null; // If the player is not found or does not belong to the home team
+                              })}
+                            </td>
                           </tr>
-                        ))} */}
-                        
+                        )}                                                
                       </React.Fragment>
                   );
                 })}
@@ -95,13 +132,8 @@ const Matches = ({ tournamentId, teams, players, AllMatches, StatisticsGoals, St
       )}
       </>
         ) : (
-        <p className='not'>Добавте спочатку команди та гравців</p>
-      )}
-
-
-
-      
-      
+        <p className='not'>Add teams and players first</p>
+      )}      
       
     </div>
 

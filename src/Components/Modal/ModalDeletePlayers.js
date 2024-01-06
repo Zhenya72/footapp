@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Loader from '../Loader';
+import ErrorModal from '../ErrorModal';
 import { Button, Modal } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../pages/Pages.css'
 
 const ModalDeletePlayers = ({ modalDeleteShow, playerId, handleCloseModal, fetchPlayers }) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   const deleteTeams = async (e) => {
     e.preventDefault();
@@ -16,24 +18,29 @@ const ModalDeletePlayers = ({ modalDeleteShow, playerId, handleCloseModal, fetch
       fetchPlayers()
       handleCloseModal(); // Закрити модальне вікно після успішного видалення
     } catch (error) {
-      console.error('Помилка видалення гравця', error);
+      setError('Player deletion error', error);
+      console.error('Player deletion error', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const closeErrorModal = () => {
+    setError(null);
+  };
     
   return (
     <div>
-      {loading && <Loader/>}
+      {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
       <Modal show={modalDeleteShow} onHide={handleCloseModal}>
         <Modal.Header closeButton>
-          <Modal.Title>Підтвердження видалення гравця</Modal.Title>
+          <Modal.Title>Confirmation of player removal</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Ви впевнені, що бажаєте видалити гравця?</Modal.Body>
+        <Modal.Body>Are you sure you want to delete a player?</Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>Скасувати</Button>
-          <Button variant="primary" onClick={deleteTeams}>Підтвердити видалення</Button>
+          <Button variant="secondary" onClick={handleCloseModal}>Cancel</Button>
+          <Button variant="primary" onClick={deleteTeams}>Confirm the deletion</Button>
         </Modal.Footer>
       </Modal>
       </div>

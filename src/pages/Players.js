@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Loader from '../Components/Loader';
+import ErrorModal from '../Components/ErrorModal';
 import { Table, Button } from 'react-bootstrap';
 import { TrashFill, Pencil } from 'react-bootstrap-icons';
 import ModalAddPlayer from '../Components/Modal/ModalAddPlayer';
@@ -10,6 +11,7 @@ import './Pages.css'
 
 const Players = ({tournamentId, teams, AllPlayers}) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [players, setPlayers] = useState([]);  // Стейт для збереження команд
   const [modalDeleteShow, setModalDeleteShow] = useState(false);
   const [playerId, setPlayerId] = useState(null);
@@ -30,7 +32,8 @@ const Players = ({tournamentId, teams, AllPlayers}) => {
       setPlayers(response.data.players);
       AllPlayers(response.data.players);
     } catch (error) {
-      console.error('Помилка отримання турніру:', error);
+      setError('Error receiving a tournament:', error);
+      console.error('Error receiving a tournament:', error);
     } finally {
       setLoading(false);
     }
@@ -67,11 +70,14 @@ const Players = ({tournamentId, teams, AllPlayers}) => {
     fetchPlayers();
   }, []);
 
-
+  const closeErrorModal = () => {
+    setError(null);
+  };
 
   return (    
     <div className='cont'>
       {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
       {teams && teams.length > 0 ? (
       <>
         <ModalAddPlayer teams={teams} fetchPlayers={fetchPlayers} />
@@ -117,7 +123,7 @@ const Players = ({tournamentId, teams, AllPlayers}) => {
       )}
       </>
         ) : (
-        <p className='not'>Добавте спочатку команди</p>
+        <p className='not'>Add the following commands first</p>
       )}
 
 

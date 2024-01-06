@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Loader from '../Loader';
+import ErrorModal from '../ErrorModal';
 import { PlusCircle } from 'react-bootstrap-icons';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -17,6 +18,7 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
   const [weight, setWeight] = useState('');  
   const [gameNumber, setGameNumber] = useState('');  
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   const handleModalAddClose = () => {
     setModalAddShow(false);
@@ -50,28 +52,33 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
       fetchPlayers();
       handleModalAddClose();
     } catch (error) {
-      console.error('Помилка додавання гравця:', error);
+      setError('Error adding a player:', error);
+      console.error('Error adding a player:', error);
     } finally {
       setLoading(false);
     }
   };
-    
+  
+  const closeErrorModal = () => {
+    setError(null);
+  };
     
   return (
     <div>
-      {loading && <Loader/>}
+      {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
           <Button onClick={handleModalAddShow} className="me-2 add_button"><PlusCircle className="add_button__icons"/></Button>
         {/* Модальне вікно для додавання команди */}
         <div>
           <Modal show={modalAddShow} onHide={handleModalAddClose}>
             <Modal.Header closeButton>
-              <Modal.Title>Додати гравця</Modal.Title>
+              <Modal.Title>Add a player</Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <Form.Group className='mb-3'>
                 <Form.Control
                   type='text'
-                  placeholder='Введіть імя гравця'
+                  placeholder="Enter the player's name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                 />
@@ -79,7 +86,7 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
             <Form.Group className='mb-3'>
                 <Form.Control
                   type='text'
-                  placeholder='Введіть прізвище гравця'
+                  placeholder="Enter the player's last name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                 />
@@ -88,7 +95,7 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
               <Form.Select
                 value={teamId}
                 onChange={(e) => setTeamId(e.target.value)}>
-                <option>Виберіть команду</option>
+                <option>Select a team</option>
                 {teams.sort((a, b) => a.name.localeCompare(b.name))
                   .map(team => (
                   <option key={team.team_id} value={team.team_id}>{team.name}</option>
@@ -99,7 +106,7 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
               <Form.Select
                 value={position}
                 onChange={(e) => setPosition(e.target.value)} aria-label="Default select example">
-                  <option>Виберіть позицію</option>
+                  <option>Select a position</option>
                   <option value="GK">GK – goalkeeper</option>
                   <option value="CB">CB – centre back</option>
                   <option value="LB">LB – left back</option>
@@ -120,7 +127,7 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
               <Form.Group className='mb-3'>
               <Form.Control
                   type='date'
-                  placeholder='Введіть дату народження гравця'
+                  placeholder="Enter the player's date of birth"
                   value={birthday}
                   onChange={(e) => setBirthday(e.target.value)}
                 />
@@ -128,7 +135,7 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
               <Form.Group className='mb-3'>
               <Form.Control
                   type='number'
-                  placeholder='Введіть зріст гравця (cm)'
+                  placeholder="Enter the player's height (cm)"
                   value={height}
                   onChange={(e) => setHeight(e.target.value)}
               />
@@ -136,7 +143,7 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
               <Form.Group className='mb-3'>
               <Form.Control
                   type='number'
-                  placeholder='Введіть вагу гравця (kg)'
+                  placeholder="Enter the player's weight (kg)"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                 />
@@ -144,7 +151,7 @@ const ModalAddPlayer = ({ teams, fetchPlayers }) => {
               <Form.Group className='mb-3'>
               <Form.Control
                   type='number'
-                  placeholder='Введіть ігровий номер гравця'
+                  placeholder="Enter the player's game number"
                   value={gameNumber}
                   onChange={(e) => setGameNumber(e.target.value)}
                 />

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 import Loader from '../Components/Loader';
+import ErrorModal from '../Components/ErrorModal';
 import { Button } from 'react-bootstrap';
 import { TrashFill, Pencil } from 'react-bootstrap-icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,6 +16,7 @@ function MainPage(props) {
   const history = useHistory();
   const [tournaments, setTournaments] = useState([]);  // Стейт для збереження турнірів
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [modalDeleteShow, setModalDeleteShow] = useState(false);
   const [tournamentIdToDelete, setTournamentIdToDelete] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -28,7 +30,8 @@ function MainPage(props) {
         setTournaments(response.data.userTournaments);
       }
     } catch (error) {
-      console.error('Помилка отримання турнірів:', error);
+      setError('Error receiving tournaments:', error);
+      console.error('Error receiving tournaments:', error);
     } finally {
       setLoading(false);
     }
@@ -69,14 +72,17 @@ function MainPage(props) {
     }
   }, [props.user]);
   
-
+  const closeErrorModal = () => {
+    setError(null);
+  };
   
   return (
     <div className='main'>
-      {loading && <Loader/>}
+      {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
       <ModalOffcanvas user={props} />
       
-      <h1>Твої чемпіонати</h1>
+      <h1>Your championships</h1>
 
       {props.user && (
         <ModalAddTournaments email={props.user.email} fetchUserTournaments={fetchUserTournaments} />

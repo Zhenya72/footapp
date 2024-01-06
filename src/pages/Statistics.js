@@ -35,7 +35,7 @@ const Statistics = ({ top5Scorers, top5Asists, teams, players, matches }) => {
             </tbody>
         </Table>
                 ) : (
-        <p className='nottop'>Ще немає статистики голів</p>
+        <p className='nottop'>No goal statistics yet</p>
             )}
             </div>  
 
@@ -67,13 +67,13 @@ const Statistics = ({ top5Scorers, top5Asists, teams, players, matches }) => {
             </tbody>
         </Table>
                 ) : (
-        <p className='notbottom'>Ще немає статистики асистів</p>
+        <p className='notbottom'>No statistics on assistants yet</p>
           )}
           </div>
 
       </>
         ) : (
-        <p className='not'>Добавте спочатку матчі</p>
+        <p className='not'>Add matches first</p>
       )}
       
     </div>

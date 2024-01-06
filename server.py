@@ -2,10 +2,7 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-import time
-import os
-from datetime import datetime, time
-import uuid
+from datetime import datetime
 
 
 app = Flask(__name__)
@@ -85,21 +82,21 @@ class Assistants(db.Model):
     player_id = db.Column(db.Integer, db.ForeignKey('players.player_id'), nullable=False)
     time_of_assist = db.Column(db.Integer, default=0, nullable=False)
   
-
-   
 # Створення таблиць бази даних
 # with app.app_context():
 #     db.create_all()
     
 # Очищення бази даних
 # with app.app_context():
-    # db.session.query(Users).delete()  # Видалення всіх записів з таблиці користувачів
-    # db.session.query(Tournaments).delete()  # Видалення всіх записів з таблиці турнірів 
-    # db.session.query(UserTournaments).delete()  # Видалення всіх записів з таблиці користувачів-турнірів 
-    # db.session.query(Teams).delete()  # Видалення всіх записів з таблиці команд 
-    # db.session.query(Matches).delete()  # Видалення всіх записів з таблиці гравців 
-    # db.session.commit()  # Збереження змін
-
+#     db.session.query(Users).delete()  # Видалення всіх записів з таблиці користувачів
+#     db.session.query(Tournaments).delete()  # Видалення всіх записів з таблиці турнірів 
+#     db.session.query(UserTournaments).delete()  # Видалення всіх записів з таблиці користувачів-турнірів 
+#     db.session.query(Teams).delete()  # Видалення всіх записів з таблиці команд 
+#     db.session.query(Players).delete()  # Видалення всіх записів з таблиці команд 
+#     db.session.query(Matches).delete()  # Видалення всіх записів з таблиці гравців 
+#     db.session.query(Goals).delete()  # Видалення всіх записів з таблиці гравців 
+#     db.session.query(Assistants).delete()  # Видалення всіх записів з таблиці гравців 
+#     db.session.commit()  # Збереження змін
 
 @app.route('/signupform', methods=['POST'])
 def signupform():
@@ -127,7 +124,6 @@ def loginform():
         return jsonify({'error': 'Неправильний пароль'})
     else:
         return jsonify({'firstName': user.first_name, 'lastName': user.last_name, 'email': user.email})
-
 
 @app.route('/user-tournaments', methods=['POST'])
 def user_tournaments():
@@ -162,15 +158,44 @@ def add_tournament():
 def delete_tournament(tournament_id):
     tournament_to_delete = Tournaments.query.get(tournament_id)
     if tournament_to_delete:
-        db.session.delete(tournament_to_delete)
-        user_tournaments_to_delete = UserTournaments.query.filter_by(tournament_id=tournament_id).all()
-        for user_tournament in user_tournaments_to_delete:
-            db.session.delete(user_tournament)
-        db.session.commit()
-        return jsonify({'message': 'Tournament successfully deleted'})
+        try:
+            # Delete teams related to the tournament
+            teams_to_delete = Teams.query.filter_by(tournament_id=tournament_id).all()
+            for team in teams_to_delete:
+                # Delete players related to the team
+                players_to_delete = Players.query.filter_by(team_id=team.team_id).all()
+                for player in players_to_delete:
+                    db.session.delete(player)
+                db.session.delete(team)
+
+            # Delete matches related to the tournament
+            matches_to_delete = Matches.query.filter((Matches.home_team_id.in_([team.team_id for team in teams_to_delete])) | (Matches.away_team_id.in_([team.team_id for team in teams_to_delete]))).all()
+            for match in matches_to_delete:
+                # Delete goals related to the match
+                goals_to_delete = Goals.query.filter_by(match_id=match.match_id).all()
+                for goal in goals_to_delete:
+                    db.session.delete(goal)
+
+                # Delete assistants related to the match
+                assistants_to_delete = Assistants.query.filter_by(match_id=match.match_id).all()
+                for assistant in assistants_to_delete:
+                    db.session.delete(assistant)
+
+                db.session.delete(match)
+
+            # Delete user-tournament relations
+            user_tournaments_to_delete = UserTournaments.query.filter_by(tournament_id=tournament_id).all()
+            for user_tournament in user_tournaments_to_delete:
+                db.session.delete(user_tournament)
+
+            db.session.delete(tournament_to_delete)
+            db.session.commit()
+
+            return jsonify({'message': 'Tournament and related records successfully deleted'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
     else:
         return jsonify({'error': 'Tournament not found'})
-
 
 @app.route('/tournamentsEdit/<int:tournament_id>', methods=['PUT'])
 def edit_tournament(tournament_id):
@@ -182,7 +207,6 @@ def edit_tournament(tournament_id):
         return jsonify({'message': 'Tournament name successfully updated'})
     else:
         return jsonify({'error': 'Tournament not found'})
-
 
 @app.route('/add-teams', methods=['POST'])
 def add_team_to_tournament():
@@ -208,7 +232,6 @@ def add_team_to_tournament():
     db.session.commit()
     return jsonify({'message': 'Команда успішно додана до турніру'})
 
-
 @app.route('/teams', methods=['POST'])
 def fetch_teams():
     data = request.get_json()
@@ -233,12 +256,46 @@ def fetch_teams():
 def delete_team(team_id):
     team_to_delete = Teams.query.get(team_id)
     if team_to_delete:
-        db.session.delete(team_to_delete)
-        db.session.commit()
-        return jsonify({'message': 'Команда успішно видалена'})
+        try:
+            # Видаляємо гравців, пов'язаних з командою
+            players_to_delete = Players.query.filter_by(team_id=team_id).all()
+            for player in players_to_delete:
+                # Видаляємо голи, пов'язані з гравцем
+                goals_to_delete = Goals.query.filter_by(player_id=player.player_id).all()
+                for goal in goals_to_delete:
+                    db.session.delete(goal)
+
+                # Видаляємо асистентів, пов'язаних з гравцем
+                assistants_to_delete = Assistants.query.filter_by(player_id=player.player_id).all()
+                for assistant in assistants_to_delete:
+                    db.session.delete(assistant)
+
+                db.session.delete(player)
+
+            # Видаляємо матчі, пов'язані з командою
+            matches_to_delete = Matches.query.filter((Matches.home_team_id == team_id) | (Matches.away_team_id == team_id)).all()
+            for match in matches_to_delete:
+                # Видаляємо голи, пов'язані з матчем
+                goals_to_delete = Goals.query.filter_by(match_id=match.match_id).all()
+                for goal in goals_to_delete:
+                    db.session.delete(goal)
+
+                # Видаляємо асистентів, пов'язаних з матчем
+                assistants_to_delete = Assistants.query.filter_by(match_id=match.match_id).all()
+                for assistant in assistants_to_delete:
+                    db.session.delete(assistant)
+
+                db.session.delete(match)
+
+            # Видаляємо команду
+            db.session.delete(team_to_delete)
+            db.session.commit()
+
+            return jsonify({'message': "Команда та пов'язані записи успішно видалені"})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
     else:
         return jsonify({'error': 'Команду не знайдено'})
-
 
 @app.route('/edit-teams/<int:team_id>', methods=['PATCH'])
 def edit_teams(team_id):
@@ -253,7 +310,6 @@ def edit_teams(team_id):
         return jsonify({'message': 'Команду оновлено'})
     else:
         return jsonify({'error': 'Team not found'})
-
 
 @app.route('/add-player', methods=['POST'])
 def add_player():
@@ -274,7 +330,6 @@ def add_player():
     db.session.add(new_player)
     db.session.commit()
     return jsonify({'message': 'Гравець успішно доданий в базу даних'})
-
 
 @app.route('/players', methods=['POST'])
 def fetch_players():
@@ -309,13 +364,23 @@ def fetch_players():
 def delete_player(player_id):
     player_to_delete = Players.query.get(player_id)
     if player_to_delete:
-        db.session.delete(player_to_delete)
-        db.session.commit()
-        return jsonify({'message': 'Команда успішно видалена'})
+        try:
+            # Видалення голів, пов'язаних із гравцем
+            goals_to_delete = Goals.query.filter_by(player_id=player_id).all()
+            for goal in goals_to_delete:
+                db.session.delete(goal)
+            # Видалення асистентів, пов'язаних із гравцем
+            assistants_to_delete = Assistants.query.filter_by(player_id=player_id).all()
+            for assistant in assistants_to_delete:
+                db.session.delete(assistant)
+            db.session.delete(player_to_delete)
+            db.session.commit()
+            return jsonify({'message': "Гравець та пов'язані записи успішно видалені"})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
     else:
-        return jsonify({'error': 'Команду не знайдено'})
+        return jsonify({'error': 'Гравця не знайдено'})
     
-
 @app.route('/edit-players/<int:player_id>', methods=['PATCH'])
 def edit_players(player_id):
     data = request.get_json()
@@ -334,7 +399,6 @@ def edit_players(player_id):
     else:
         return jsonify({'error': 'Гравця не знайдено'})
     
-
 @app.route('/add-match', methods=['POST'])
 def add_match():
     try:
@@ -452,7 +516,6 @@ def fetch_matches():
     matches = Matches.query.filter((Matches.home_team_id.in_(team_ids)) | (Matches.away_team_id.in_(team_ids))).all()
     goals_data = Goals.query.filter(Goals.match_id.in_([match.match_id for match in matches])).all()    
     assistants_data = Assistants.query.filter(Assistants.match_id.in_([match.match_id for match in matches])).all()
-    
     if matches:
         serialized_matches = [
             {
@@ -472,8 +535,6 @@ def fetch_matches():
         return jsonify({'matches': serialized_matches})
     else:
         return jsonify({'error': 'Матчів для цього турніру не знайдено'})
-    
-
 
 @app.route('/standings', methods=['POST'])
 def standings():
@@ -499,7 +560,6 @@ def standings():
         return jsonify({'standings': serialized_teams})
     else:
         return jsonify({'error': 'Команди для цього турніру не знайдено'})
-
 
 @app.route('/statisticsGoals', methods=['POST'])
 def statisticsGoals():
@@ -543,7 +603,6 @@ def statisticsAsists():
     else:
         return jsonify({'error': 'Асистів для цього турніру не знайдено'})
     
-
 if __name__ == '__main__':
     app.run(debug=True)
 

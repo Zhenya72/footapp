@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Loader from '../Loader';
+import ErrorModal from '../ErrorModal';
 import { PlusCircle } from 'react-bootstrap-icons';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -13,6 +14,7 @@ const ModalAddTeams = ({ tournamentId, fetchTeams }) => {
   const [yearOfFoundation, setyearOfFoundation] = useState('');  
   const [coach, setCoach] = useState('');  
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   const handleModalAddClose = () => {
     setModalAddShow(false);
@@ -38,28 +40,34 @@ const ModalAddTeams = ({ tournamentId, fetchTeams }) => {
       fetchTeams();
       handleModalAddClose();
     } catch (error) {
-      console.error('Помилка додавання команди:', error);
+      setError('Error adding a command:', error);
+      console.error('Error adding a command:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const closeErrorModal = () => {
+    setError(null);
   };
     
     
   return (
     <div>
-      {loading && <Loader/>}
+      {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
           <Button onClick={handleModalAddShow} className="me-2 add_button"><PlusCircle className="add_button__icons"/></Button>
         {/* Модальне вікно для додавання команди */}
         <div>
           <Modal show={modalAddShow} onHide={handleModalAddClose}>
             <Modal.Header closeButton>
-              <Modal.Title>Додати команду</Modal.Title>
+              <Modal.Title>Add a command</Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <Form.Group className='mb-3'>
                 <Form.Control
                   type='text'
-                  placeholder='Введіть назву команди'
+                  placeholder='Enter the name of the command'
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -67,7 +75,7 @@ const ModalAddTeams = ({ tournamentId, fetchTeams }) => {
               <Form.Group className='mb-3'>
                 <Form.Control
                   type='text'
-                  placeholder='Введіть країну команди'
+                  placeholder='Enter the country of the team'
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
                 />
@@ -75,7 +83,7 @@ const ModalAddTeams = ({ tournamentId, fetchTeams }) => {
               <Form.Group className='mb-3'>
                 <Form.Control
                 type='number'
-                placeholder='Введіть рік заснування команди'
+                placeholder='Enter the year the team was founded'
                 value={yearOfFoundation}
                 onChange={(e) => {
                   const inputYear = e.target.value;
@@ -88,7 +96,7 @@ const ModalAddTeams = ({ tournamentId, fetchTeams }) => {
               <Form.Group className='mb-3'>
               <Form.Control
                   type='text'
-                  placeholder='Введіть тренера команди'
+                  placeholder='Enter the team coach'
                   value={coach}
                   onChange={(e) => setCoach(e.target.value)}
                 />

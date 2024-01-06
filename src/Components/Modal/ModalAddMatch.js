@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Loader from '../Loader';
+import ErrorModal from '../ErrorModal';
 import { PlusCircle } from 'react-bootstrap-icons';
 import { Button, Modal, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -8,6 +9,7 @@ import '../../pages/Pages.css'
 
 const ModalAddMatch = ({ teams, players, fetchMatches }) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [modalAddShow, setModalAddShow] = useState(false);
   const [matchDate, setMatchDate] = useState('');  
   const [matchTime, setMatchTime] = useState('');  
@@ -43,7 +45,7 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
               setdataGoalsHome(newdataGoalsHome);
             }}
       >
-        <option>Виберіть гравця</option>
+        <option>Select a player</option>
         {players.filter(player => player.team_id === parseInt(homeTeamId))
         .sort((a, b) => a.first_name.localeCompare(b.first_name))
         .map(player => (
@@ -58,8 +60,7 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
               setdataGoalsHome(newdataGoalsHome);
             }}
       >
-        <option value="">Ніхто не віддавав</option>
-        <option value="pen">Забив з пенальті</option>
+        <option value="">No one gave back</option>
         {players.filter(player => player.team_id === parseInt(homeTeamId))
         .sort((a, b) => a.first_name.localeCompare(b.first_name))
         .map(player => (
@@ -96,7 +97,7 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
               setdataGoalsAway(newdataGoalsAway);
             }}
       >
-        <option>Виберіть гравця</option>
+        <option>Select a player</option>
         {players.filter(player => player.team_id === parseInt(awayTeamId))
         .sort((a, b) => a.first_name.localeCompare(b.first_name))
         .map(player => (
@@ -111,8 +112,7 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
               setdataGoalsAway(newdataGoalsAway);
             }}
       >
-        <option value="">Ніхто не віддавав</option>
-        <option value="pen">Забив з пенальті</option>
+        <option value="">No one gave back</option>
         {players.filter(player => player.team_id === parseInt(awayTeamId))
         .sort((a, b) => a.first_name.localeCompare(b.first_name))
         .map(player => (
@@ -155,44 +155,51 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
       fetchMatches();
       handleModalAddClose();
     } catch (error) {
-      console.error('Помилка додавання матчу:', error);
+      setError('Error adding a match:', error);
+      console.error('Error adding a match:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const closeErrorModal = () => {
+    setError(null);
   };
     
     
     
   return (
     <div>
-      {loading && <Loader/>}
+      {loading && <Loader />}
+      {error && <ErrorModal error={error} onClose={closeErrorModal} />}
+
           <Button onClick={handleModalAddShow} className="me-2 add_button"><PlusCircle className="add_button__icons"/></Button>
         {/* Модальне вікно для додавання матчу */}
         <div>
           <Modal show={modalAddShow} onHide={handleModalAddClose} dialogClassName="modal-lg">
             <Modal.Header closeButton>
-              <Modal.Title>Додати матч</Modal.Title>
+              <Modal.Title>Add a match</Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <Form.Group className='mb-3 top_group_input'>
                 <Form.Control
                   className='top_input'
                   type='date'
-                  placeholder='Введіть дату матчу'
+                  placeholder='Enter the date of the match'
                   value={matchDate}
                   onChange={(e) => setMatchDate(e.target.value)}
                 />
                 <Form.Control
                   className='top_input'
                   type='time'
-                  placeholder='Введіть час матчу'
+                  placeholder='Enter the time of the match'
                   value={matchTime}
                   onChange={(e) => setMatchTime(e.target.value)}
               />
                 <Form.Control
                   className='top_input'
                   type='text'
-                  placeholder='Введіть стадіон матчу'
+                  placeholder='Enter the match stadium'
                   value={stadium}
                   onChange={(e) => setStadium(e.target.value)}
                 />
@@ -207,7 +214,7 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
                     .sort((a, b) => a.name.localeCompare(b.name)));
                 }}
               >
-                <option>Виберіть домашню команду</option>
+                <option>Select your home team</option>
                 {teams.sort((a, b) => a.name.localeCompare(b.name))
                   .map(team => (
                   <option key={team.team_id} value={team.team_id}>{team.name}</option>
@@ -216,7 +223,7 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
                 <Form.Control
                   className='top_input'
                   type='number'
-                  placeholder='Введіть кількість забитих голів дом команди'
+                  placeholder='Enter the number of goals scored by the home team'
                   value={homeTeamGoals}
                   onChange={(e) => setHomeTeamGoals(e.target.value)}
               />
@@ -224,7 +231,7 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
                 <Form.Control
                   className='top_input'
                   type='number'
-                  placeholder='Введіть кількість забитих голів виїзд команди'
+                  placeholder='Enter the number of goals scored by the away team'
                   value={awayTeamGoals}
                   onChange={(e) => setAwayTeamGoals(e.target.value)}
                 />
@@ -233,7 +240,7 @@ const ModalAddMatch = ({ teams, players, fetchMatches }) => {
                   value={awayTeamId}
                   onChange={(e) => setAwayTeamId(e.target.value)}
                 >
-                  <option>Виберіть на виїзді команду</option>
+                  <option>Choose a team on the road</option>
                   {awayTeamsForSelect.map(team => (
                     <option key={team.team_id} value={team.team_id}>{team.name}</option>
                     ))} 

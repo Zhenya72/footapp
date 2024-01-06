@@ -45,7 +45,7 @@ const Standings = ({standingsTeams}) => {
             </tbody>
         </Table>
                 ) : (
-        <p className='not'>Добавте спочатку команди</p>
+        <p className='not'>Add the following commands first</p>
       )}
 
 
