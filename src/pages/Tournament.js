@@ -8,6 +8,7 @@ import { HouseFill } from 'react-bootstrap-icons';
 import './Tournament.css';
 import Standings from './Standings';
 import Statistics from './Statistics';
+import Calendar from './Calendar';
 import Matches from './Matches';
 import Teams from './Teams';
 import Players from './Players';
@@ -157,6 +158,9 @@ const Tournament = () => {
         </Tab>
         <Tab eventKey="statistics" title="Statistics">
           <Statistics top5Scorers={top5Scorers} top5Asists={top5Asists} teams={teams} players={players} matches={matches} />
+        </Tab>
+        <Tab eventKey="calendar" title="Calendar">
+          <Calendar teams={teams} tournament_id={ tournamentId } />
         </Tab>
         <Tab eventKey="matches" title="Matches">
           <Matches tournamentId={ tournamentId } teams={teams} players={players} AllMatches={AllMatches} StatisticsGoals={StatisticsGoals} StatisticsAsists={StatisticsAsists} standings={ standings } />

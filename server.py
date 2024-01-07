@@ -3,6 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import random
+import itertools
+from sqlalchemy import or_
 
 
 app = Flask(__name__)
@@ -82,6 +85,12 @@ class Assistants(db.Model):
     player_id = db.Column(db.Integer, db.ForeignKey('players.player_id'), nullable=False)
     time_of_assist = db.Column(db.Integer, default=0, nullable=False)
   
+class Calendar(db.Model):
+    calendar_id = db.Column(db.Integer, primary_key=True)
+    round_number = db.Column(db.Integer)
+    home_team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
+    away_team_id = db.Column(db.Integer, db.ForeignKey('teams.team_id'), nullable=False)
+
 # Створення таблиць бази даних
 # with app.app_context():
 #     db.create_all()
@@ -96,7 +105,8 @@ class Assistants(db.Model):
 #     db.session.query(Matches).delete()  # Видалення всіх записів з таблиці гравців 
 #     db.session.query(Goals).delete()  # Видалення всіх записів з таблиці гравців 
 #     db.session.query(Assistants).delete()  # Видалення всіх записів з таблиці гравців 
-#     db.session.commit()  # Збереження змін
+    # db.session.query(Calendar).delete()  # Видалення всіх записів з таблиці гравців 
+    # db.session.commit()  # Збереження змін
 
 @app.route('/signupform', methods=['POST'])
 def signupform():
@@ -182,6 +192,14 @@ def delete_tournament(tournament_id):
                     db.session.delete(assistant)
 
                 db.session.delete(match)
+            
+            # Delete records from the Calendar table related to the tournament
+            calendar_records_to_delete = Calendar.query.filter(
+                (Calendar.home_team_id.in_([team.team_id for team in teams_to_delete])) |
+                (Calendar.away_team_id.in_([team.team_id for team in teams_to_delete]))
+            ).all()
+            for calendar_record in calendar_records_to_delete:
+                db.session.delete(calendar_record)
 
             # Delete user-tournament relations
             user_tournaments_to_delete = UserTournaments.query.filter_by(tournament_id=tournament_id).all()
@@ -286,6 +304,13 @@ def delete_team(team_id):
                     db.session.delete(assistant)
 
                 db.session.delete(match)
+
+             # Delete records from the Calendar table
+            calendar_records_to_delete = Calendar.query.filter(
+                (Calendar.home_team_id == team_id) | (Calendar.away_team_id == team_id)
+            ).all()
+            for calendar_record in calendar_records_to_delete:
+                db.session.delete(calendar_record)
 
             # Видаляємо команду
             db.session.delete(team_to_delete)
@@ -602,6 +627,77 @@ def statisticsAsists():
         return jsonify({'assistants_data': serialized_teams})
     else:
         return jsonify({'error': 'Асистів для цього турніру не знайдено'})
+    
+
+@app.route('/create-match-calendar', methods=['POST'])
+def create_match_calendar():
+    data = request.get_json()
+    tournament_id = data['tournament_id']
+
+    # Delete existing data for the given tournament
+    # Calendar.query.filter(Calendar.round_number.isnot(None), Calendar.home_team_id.isnot(None), Calendar.away_team_id.isnot(None)).delete()
+
+    teams = Teams.query.filter_by(tournament_id=tournament_id).all()
+    team_ids = [team.team_id for team in teams]
+
+    Calendar.query.filter(
+        or_(Calendar.home_team_id.in_(team_ids), Calendar.away_team_id.in_(team_ids)),
+        Calendar.round_number.isnot(None),
+        Calendar.home_team_id.isnot(None),
+        Calendar.away_team_id.isnot(None)
+    ).delete()
+    db.session.commit()
+
+    # Generate unique pairs of teams for each round
+    matchups = list(itertools.combinations(team_ids, 2))
+    random.shuffle(matchups)
+
+    # Assign matchups to rounds in the calendar table
+    round_number = 1
+    played_matchups = set()
+
+    while matchups:
+        round_matchups = matchups[:len(teams) // 2]
+        matchups = matchups[len(teams) // 2:]
+
+        for home_team_id, away_team_id in round_matchups:
+            # Check if this matchup has already been played and away_team_id is not the same as home_team_id
+            if (home_team_id, away_team_id) not in played_matchups and (away_team_id, home_team_id) not in played_matchups and home_team_id != away_team_id:
+                new_match = Calendar(round_number=round_number, home_team_id=home_team_id, away_team_id=away_team_id)
+                db.session.add(new_match)
+
+                # Add this matchup to the set of played matchups
+                played_matchups.add((home_team_id, away_team_id))
+
+        round_number += 1
+
+    db.session.commit()
+    return jsonify({'message': 'Match calendar created successfully'})
+
+
+# API endpoint to fetch the match calendar
+@app.route('/fetch-match-calendar', methods=['POST'])
+def fetch_match_calendar():
+    data = request.get_json()
+    tournament_id = data['tournament_id']
+
+    # Check if tournament_id is provided
+    if tournament_id is None:
+        return jsonify({'error': 'Tournament ID is required'}), 400
+
+    # Retrieve the calendar for the specified tournament
+    calendar = Calendar.query.filter(
+        (Calendar.round_number.isnot(None)) &
+        (Calendar.home_team_id.isnot(None)) &
+        (Calendar.away_team_id.isnot(None)) &
+        ((Calendar.home_team_id.in_(db.session.query(Teams.team_id).filter_by(tournament_id=tournament_id))) |
+         (Calendar.away_team_id.in_(db.session.query(Teams.team_id).filter_by(tournament_id=tournament_id))))
+    ).all()
+
+    # Format the calendar data
+    match_calendar = [{'round_number': match.round_number, 'home_team_id': match.home_team_id, 'away_team_id': match.away_team_id} for match in calendar]
+
+    return jsonify(match_calendar)
     
 if __name__ == '__main__':
     app.run(debug=True)
