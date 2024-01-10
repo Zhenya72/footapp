@@ -105,8 +105,25 @@ class Calendar(db.Model):
 #     db.session.query(Matches).delete()  # Видалення всіх записів з таблиці гравців 
 #     db.session.query(Goals).delete()  # Видалення всіх записів з таблиці гравців 
 #     db.session.query(Assistants).delete()  # Видалення всіх записів з таблиці гравців 
-    # db.session.query(Calendar).delete()  # Видалення всіх записів з таблиці гравців 
-    # db.session.commit()  # Збереження змін
+#     db.session.query(Calendar).delete()  # Видалення всіх записів з таблиці гравців 
+#     db.session.commit()  # Збереження змін
+
+
+# with app.app_context():
+#     db.session.query(Teams).update({
+#         Teams.games: 0,
+#         Teams.victories: 0,
+#         Teams.nobodys: 0,
+#         Teams.defeats: 0,
+#         Teams.goals_scored: 0,
+#         Teams.missed_balls: 0,
+#         Teams.goal_difference: 0,
+#         Teams.points: 0
+#     })
+
+#     # Зберегти зміни у базі даних
+#     db.session.commit()
+
 
 @app.route('/signupform', methods=['POST'])
 def signupform():
@@ -633,9 +650,6 @@ def statisticsAsists():
 def create_match_calendar():
     data = request.get_json()
     tournament_id = data['tournament_id']
-
-    # Delete existing data for the given tournament
-    # Calendar.query.filter(Calendar.round_number.isnot(None), Calendar.home_team_id.isnot(None), Calendar.away_team_id.isnot(None)).delete()
 
     teams = Teams.query.filter_by(tournament_id=tournament_id).all()
     team_ids = [team.team_id for team in teams]
