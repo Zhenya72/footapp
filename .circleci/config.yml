@@ -1,0 +1,75 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@4.1
+  aws-s3: circleci/aws-s3@2.0
+  slack: circleci/slack@4.4.2
+
+jobs:
+  notify:
+    docker:
+      - image: "cimg/base:stable"
+    steps:
+      - run: echo "deploy my app"
+      - slack/notify:
+          event: fail
+          mentions: "@i.maslakoff"
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: success_tagged_deploy_1
+
+workflows:
+  production_build_and_deploy:
+    jobs:
+      - approval:
+          type: approval
+          filters:
+            branches:
+              only:
+                - main
+      - node/test:
+          requires:
+            - approval
+          version: "15.1"
+          # after the node/test job completes, build the dist packages and save them to a workspace
+          post-steps:
+            - run: npm run build
+            - aws-s3/sync:
+                from: build/
+                to: "s3://ma-react"
+                arguments: --acl public-read
+      - notify:
+          requires:
+            - node/test
+
+  development_build_and_deploy:
+    jobs:
+      - node/test:
+          version: "15.1"
+          # after the node/test job completes, build the dist packages and save them to a workspace
+          post-steps:
+            - run: npm run build
+            - aws-s3/sync:
+                from: build/
+                to: "s3://prod-ma-react"
+                arguments: --acl public-read
+          filters:
+            branches:
+              only:
+                - develop
+      - notify:
+          requires:
+            - node/test
+
+  # dayly_tests:
+  #   triggers:
+  #     - schedule:
+  #         cron: "30,35,40,45 * * * *"
+  #         filters:
+  #           branches:
+  #             only:
+  #               - main
+  #   jobs:
+  #     - node/test:
+  #         version: "15.1"
